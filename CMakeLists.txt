@@ -9,6 +9,7 @@ find_package(CUDA REQUIRED)
 include_directories(${CUDA_INCLUDE_DIRS})
 include_directories(${EIGEN_INCLUDE_DIRS})
 
+file(GLOB srcs *.cpp)
 file(GLOB cuda Cuda/*.cu)
 
 set(CUDA_ARCH_BIN "30 35 50 52 61" CACHE STRING "Specify GPU arch")
