@@ -10,14 +10,10 @@
 #endif
 
 // Should take in datapoints as eigen matrix (N x 3) input
-const Eigen::VectorXd& runLogisiticRegression(const Eigen::MatrixXd &points,
+const Eigen::VectorXd& runLogisticRegression(const Eigen::MatrixXd &points,
 											  const Eigen::VectorXi &occupancy);
 
-void initSgdParams(float learningRate, float lambda);
-
-void initRbfParams(float lengthScale);
-
-void getCudaParams(int numDataPoints);
+int getNumBlocks(int numDataPoints);
 
 void convertEigenInputToPointers(const Eigen::MatrixXd &points,
 								 const Eigen::VectorXi &occupancy

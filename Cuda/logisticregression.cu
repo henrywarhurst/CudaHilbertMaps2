@@ -1,0 +1,50 @@
+#include <logisticregression.cuh>
+
+// Should take in datapoints as eigen matrix (N x 3) input
+const Eigen::VectorXd& runLogisticRegression(const Eigen::MatrixXd &points,
+                                              const Eigen::VectorXi &occupancy)
+{
+	return 0;	
+}
+
+int getNumBlocks(int numDataPoints)
+{
+	return (int) ceil((float) numDataPoints / (double) threadsPerBlock);
+}
+
+void convertEigenInputToPointers(const Eigen::MatrixXd &points,
+                                 const Eigen::VectorXi &occupancy
+                                 float *h_pointsX,
+                                 float *h_pointsY,
+                                 float *h_pointsZ,
+                                 int   *h_occupancy)
+{
+
+}
+
+const Eigen::VectorXd& convertWeightPointerToEigen(float *d_weights)
+{
+	// Not sure if this will work. May need to provide rows and cols
+	// to Map function
+	return (VectorXd) Map<VectorXd>(d_weights);
+}
+
+__global__ void cudaRbf(float *d_pointsX, float *d_pointsY, float *d_pointsZ,
+                        float *d_outputFeatures, int *d_pointIdx,
+                        float *d_lengthScale)
+{
+
+}
+
+__global__ void cudaSgd(int *d_occupancy,
+                        float *d_weights,
+                        float *d_features,
+                        int *d_pointIdx,
+                        curandState_t *states)
+{
+
+}
+
+
+#endif /* CUDA_LOGISTICREGRESSION_CUH_ */
+
