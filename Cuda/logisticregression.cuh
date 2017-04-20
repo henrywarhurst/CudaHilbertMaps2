@@ -1,6 +1,8 @@
 #ifndef CUDA_LOGISTICREGRESSION_CUH_
 #define CUDA_LOGISTICREGRESSION_CUH_
 
+#include <Eigen/Dense>
+
 #if __CUDA_ARCH__ < 300
 #define MAX_THREADS 512
 #else

@@ -16,7 +16,6 @@ set(CUDA_ARCH_BIN "30 35 50 52 61" CACHE STRING "Specify GPU arch")
 set(CUDA_ARCH_PTX "" CACHE STRING "Specify virtual PTX arch")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR})
-
 include(CudaComputeTargetFlags.cmake)                  
 APPEND_TARGET_ARCH_FLAGS()
 
