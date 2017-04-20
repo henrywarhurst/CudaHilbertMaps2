@@ -1,7 +1,10 @@
 #ifndef CUDA_LOGISTICREGRESSION_CUH_
 #define CUDA_LOGISTICREGRESSION_CUH_
 
-#include <Eigen/Dense>
+#include <eigen3/Eigen/Dense>
+
+#include <curand.h>
+#include <curand_kernel.h>
 
 #if __CUDA_ARCH__ < 300
 #define MAX_THREADS 512
@@ -16,7 +19,7 @@ const Eigen::VectorXd& runLogisticRegression(const Eigen::MatrixXd &points,
 int getNumBlocks(int numDataPoints);
 
 void convertEigenInputToPointers(const Eigen::MatrixXd &points,
-								 const Eigen::VectorXi &occupancy
+								 const Eigen::VectorXi &occupancy,
 								 float *h_pointsX,
 								 float *h_pointsY,
 								 float *h_pointsZ,

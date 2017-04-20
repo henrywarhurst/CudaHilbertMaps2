@@ -1,10 +1,10 @@
-#include <logisticregression.cuh>
+#include "logisticregression.cuh"
 
 // Should take in datapoints as eigen matrix (N x 3) input
 const Eigen::VectorXd& runLogisticRegression(const Eigen::MatrixXd &points,
                                               const Eigen::VectorXi &occupancy)
 {
-	return 0;	
+	return std::nullptr;	
 }
 
 int getNumBlocks(int numDataPoints)
@@ -44,7 +44,4 @@ __global__ void cudaSgd(int *d_occupancy,
 {
 
 }
-
-
-#endif /* CUDA_LOGISTICREGRESSION_CUH_ */
 
