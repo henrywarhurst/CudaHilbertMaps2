@@ -13,19 +13,19 @@
 #endif
 
 // Should take in datapoints as eigen matrix (N x 3) input
-const Eigen::VectorXd& runLogisticRegression(const Eigen::MatrixXd &points,
-											  const Eigen::VectorXi &occupancy);
+const Eigen::MatrixXf runLogisticRegression(const Eigen::MatrixXf &points,
+											  const Eigen::MatrixXi &occupancy);
 
 int getNumBlocks(int numDataPoints);
 
-void convertEigenInputToPointers(const Eigen::MatrixXd &points,
-								 const Eigen::VectorXi &occupancy,
+void convertEigenInputToPointers(const Eigen::MatrixXf &points,
+								 const Eigen::MatrixXi &occupancy,
 								 float *h_pointsX,
 								 float *h_pointsY,
 								 float *h_pointsZ,
 								 int   *h_occupancy);
 
-const Eigen::VectorXd& convertWeightPointerToEigen(float *d_weights);
+const Eigen::MatrixXf convertWeightPointerToEigen(float *d_weights);
 								 
 __global__ void cudaRbf(float *d_pointsX, float *d_pointsY, float *d_pointsZ,
                         float *d_outputFeatures, int *d_pointIdx,
