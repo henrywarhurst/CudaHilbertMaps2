@@ -15,6 +15,7 @@
 // Should take in datapoints as eigen matrix (N x 3) input
 Eigen::MatrixXf runLogisticRegression(const Eigen::MatrixXf &points,
 									  const Eigen::MatrixXi &occupancy,
+									  float lengthScale,
 									  float learningRate,
 									  float regularisationLambda);
 
@@ -27,7 +28,7 @@ void convertEigenInputToPointers(const Eigen::MatrixXf &points,
 								 float *h_pointsZ,
 								 int   *h_occupancy);
 
-Eigen::MatrixXf convertWeightPointerToEigen(float *h_weights);
+Eigen::MatrixXf convertWeightPointerToEigen(float *h_weights, size_t numPoints);
 								 
 __global__ void cudaRbf(float *d_pointsX, float *d_pointsY, float *d_pointsZ,
                         float *d_outputFeatures, int d_pointIdx,
@@ -42,6 +43,8 @@ __global__ void cudaSgd(int *d_occupancy,
 						float lambda);
 
 __global__ void initCurand(unsigned int seed, curandState_t* states);
+
+void print_hi();
 
 
 

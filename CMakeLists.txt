@@ -44,3 +44,18 @@ INSTALL(TARGETS cudahilbertmaps
 			LIBRARY DESTINATION lib
 			ARCHIVE DESTINATION lib
 )
+
+add_executable(output
+			${srcs}
+			${cuda}
+			${cuda_objs}
+			${hdrs}
+			${cuda_hdrs}
+)
+
+target_link_libraries(output
+					  ${Eigen_LIBRARIES}
+					  ${CUDA_LIBRARIES}
+)
+
+

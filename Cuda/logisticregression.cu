@@ -1,21 +1,30 @@
 #include <eigen3/Eigen/Core>
+#include <cmath>
+#include <iostream>
+#include <curand.h>
+#include <curand_kernel.h>
+
 #include "logisticregression.cuh"
 
-// Should take in datapoints as eigen matrix (N x 3) input
-Eigen::MatrixXf runLogisticRegression(const Eigen::MatrixXd &points,
-                                      const Eigen::VectorXi &occupancy,
-									  float learningRate,
-									  float regularisationLambda)
+void print_hi()
 {
-	Eigen::MatrixXf tmp(1,1);
+	std::cout << "print_hi" << std::endl;
+}
 
+// Should take in datapoints as eigen matrix (N x 3) input
+Eigen::MatrixXf runLogisticRegression(Eigen::MatrixXf points,
+                                      Eigen::MatrixXi occupancy,
+                                      float lengthScale,
+                                      float learningRate,
+                                      float regularisationLambda)
+{
 	// Memory computation
 	size_t nPoints = points.size();
 	size_t size = nPoints*sizeof(float);
 
 	// Allocate host memory
 	float *h_pointsX, *h_pointsY, *h_pointsZ;
-	int *occupancy;
+	int *h_occupancy;
 	
 	h_pointsX 		= (float *) malloc(size);
 	h_pointsY 		= (float *) malloc(size);
@@ -40,48 +49,52 @@ Eigen::MatrixXf runLogisticRegression(const Eigen::MatrixXd &points,
 	cudaMalloc((void **) &d_features, 	size);
 
 	// Copy memory - host to device
-	cudaMemcpy(d_pointsX, pointsX, size, cudaMemcpyHostToDevice);
- 	cudaMemcpy(d_pointsY, pointsY, size, cudaMemcpyHostToDevice); 
-	cudaMemcpy(d_pointsZ, pointsZ, size, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_pointsX, 	h_pointsX, 		size, cudaMemcpyHostToDevice);
+ 	cudaMemcpy(d_pointsY, 	h_pointsY, 		size, cudaMemcpyHostToDevice); 
+	cudaMemcpy(d_pointsZ, 	h_pointsZ, 		size, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_occupancy, h_occupancy, 	size, cudaMemcpyHostToDevice);
 
 	// Compute device parameters
 	int numBlocks = getNumBlocks(nPoints);	
 	std::cout << "Using " << numBlocks << " blocks of memory on the GPU";
-	std::endl;
+	std::cout << std::endl;
 
 	// Setup Random Number Generator
 	curandState_t* states;
 	cudaMalloc((void **) &states, numBlocks*sizeof(curandState_t));
-	initCurand<<numBlocks, 1>>>(time(0), states);
+	initCurand<<<numBlocks, 1>>>(time(0), states);
 
 	// Alternate between SGD and computing features
 	for (size_t i=0; i<nPoints; ++i) {
-		cudaRbf<<<numBlocks, threadsPerBlock>>>
-			(d_pointsX, d_pointsY, d_pointsZ, d_features, i, lengthScale);
-		cudaSgd<<numBlocks, threadsPerBlock>>>
-			(d_occupancy, d_weights, d_features, 
+		// Compute features for this point
+		cudaRbf<<<numBlocks, MAX_THREADS>>>
+				(d_pointsX, d_pointsY, d_pointsZ, d_features, i, lengthScale);
+		// Run one SGD step using features from this point
+		cudaSgd<<<numBlocks, MAX_THREADS>>>
+				(d_occupancy, d_weights, d_features, 
 								i, states, learningRate, regularisationLambda);
-
 	}
 
 	// Copy weights to host memory
 	float *h_weights = (float *) malloc(size);
 	cudaMemcpy(h_weights, d_weights, size, cudaMemcpyDeviceToHost);
-	Eigen::EigenXf outputWeights = convertWeightPointerToEigen(h_weights, nPoints); 
+	Eigen::MatrixXf outputWeights = convertWeightPointerToEigen(h_weights, nPoints); 
 	
 
 	// Delete device memory
 	cudaFree(d_pointsX);
-	cudaFree(d_pointsY);
-	cudaFree(d_pointsZ);
-	cudaFree(d_occupancy);
+	cudaFree(d_pointsY); cudaFree(d_pointsZ); cudaFree(d_occupancy);
 	cudaFree(d_occupancy);
 	cudaFree(d_weights);
 	cudaFree(d_features);
 
 	// Delete host memory
+	free(h_pointsX);
+	free(h_pointsY);
+	free(h_pointsZ);
+	free(h_occupancy);
 
-	return tmp;	
+	return outputWeights;	
 }
 
 int getNumBlocks(int numDataPoints)
@@ -131,7 +144,7 @@ void convertEigenInputToPointers(const Eigen::MatrixXf &points,
 	
 }
 
-Eigen::MatrixXf convertWeightPointerToEigen(float *h_weights, int nWeights)
+Eigen::MatrixXf convertWeightPointerToEigen(float *h_weights, size_t nWeights)
 {
 	return Eigen::Map<Eigen::MatrixXf>(h_weights, 1, nWeights);
 }
@@ -147,7 +160,7 @@ __global__ void cudaRbf(float *d_x, float *d_y, float *d_z,
                  (d_y[cudaIdx] - d_y[d_pointIdx]) * (d_y[cudaIdx] - d_y[d_pointIdx]) +
                  (d_z[cudaIdx] - d_z[d_pointIdx]) * (d_z[cudaIdx] - d_z[d_pointIdx]);
 
-	outputFeatures[cudaIdx] = (float) exp(-*d_lengthScale * diff);
+	outputFeatures[cudaIdx] = (float) exp(-d_lengthScale * diff);
 }
 
 __global__ void cudaSgd(int *d_occupancy,
@@ -165,7 +178,7 @@ __global__ void cudaSgd(int *d_occupancy,
 	      // Random value between 0 and 1
 	      d_weights[cudaIdx] = (float) (curand(&states[blockIdx.x]) % 1000) / 1000.0; 
 	} else {
-		float numerator 	= -d_occupancy[*d_pointIdx] * d_features[cudaIdx];
+		float numerator 	= -d_occupancy[d_pointIdx] * d_features[cudaIdx];
     	float denominator 	= 1 + exp(-numerator*d_weights[cudaIdx]);         
 
         // Just using L2 regularisation here, may use elastic net later
