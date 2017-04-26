@@ -15,8 +15,8 @@
 // Should take in datapoints as eigen matrix (N x 3) input
 Eigen::MatrixXf runLogisticRegression(const Eigen::MatrixXf &points,
 									  const Eigen::MatrixXi &occupancy,
-									  const float learningRate,
-									  const float regularisationLambda);
+									  float learningRate,
+									  float regularisationLambda);
 
 int getNumBlocks(int numDataPoints);
 
