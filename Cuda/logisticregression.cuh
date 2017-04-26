@@ -30,14 +30,19 @@ void convertEigenInputToPointers(const Eigen::MatrixXf &points,
 Eigen::MatrixXf convertWeightPointerToEigen(float *h_weights);
 								 
 __global__ void cudaRbf(float *d_pointsX, float *d_pointsY, float *d_pointsZ,
-                        float *d_outputFeatures, int *d_pointIdx,
-                        float *d_lengthScale);
+                        float *d_outputFeatures, int d_pointIdx,
+                        float d_lengthScale);
 
 __global__ void cudaSgd(int *d_occupancy,
                         float *d_weights,
                         float *d_features,
-                        int *d_pointIdx,
-                        curandState_t *states);
+                        int d_pointIdx,
+                        curandState_t *states,
+						float learningRate,
+						float lambda);
+
+__global__ void initCurand(unsigned int seed, curandState_t* states);
+
 
 
 #endif /* CUDA_LOGISTICREGRESSION_CUH_ */

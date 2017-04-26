@@ -1,7 +1,6 @@
 #include <eigen3/Eigen/Core>
 #include "logisticregression.cuh"
 
-
 // Should take in datapoints as eigen matrix (N x 3) input
 Eigen::MatrixXf runLogisticRegression(const Eigen::MatrixXd &points,
                                       const Eigen::VectorXi &occupancy,
@@ -9,6 +8,79 @@ Eigen::MatrixXf runLogisticRegression(const Eigen::MatrixXd &points,
 									  float regularisationLambda)
 {
 	Eigen::MatrixXf tmp(1,1);
+
+	// Memory computation
+	size_t nPoints = points.size();
+	size_t size = nPoints*sizeof(float);
+
+	// Allocate host memory
+	float *h_pointsX, *h_pointsY, *h_pointsZ;
+	int *occupancy;
+	
+	h_pointsX 		= (float *) malloc(size);
+	h_pointsY 		= (float *) malloc(size);
+	h_pointsZ 		= (float *) malloc(size);
+	h_occupancy 	= (int *) 	malloc(size);
+
+	// Put input values into raw host memory
+	convertEigenInputToPointers(points, occupancy, 
+					h_pointsX, h_pointsY, h_pointsZ, h_occupancy);	
+
+	// Allocate device memory
+	float *d_pointsX, *d_pointsY, *d_pointsZ;
+    int *d_occupancy;
+    float *d_weights;
+	float *d_features;
+
+    cudaMalloc((void **) &d_pointsX, 	size);
+    cudaMalloc((void **) &d_pointsY, 	size); 
+	cudaMalloc((void **) &d_pointsZ, 	size);
+    cudaMalloc((void **) &d_occupancy, 	size);
+    cudaMalloc((void **) &d_weights, 	size);
+	cudaMalloc((void **) &d_features, 	size);
+
+	// Copy memory - host to device
+	cudaMemcpy(d_pointsX, pointsX, size, cudaMemcpyHostToDevice);
+ 	cudaMemcpy(d_pointsY, pointsY, size, cudaMemcpyHostToDevice); 
+	cudaMemcpy(d_pointsZ, pointsZ, size, cudaMemcpyHostToDevice);
+
+	// Compute device parameters
+	int numBlocks = getNumBlocks(nPoints);	
+	std::cout << "Using " << numBlocks << " blocks of memory on the GPU";
+	std::endl;
+
+	// Setup Random Number Generator
+	curandState_t* states;
+	cudaMalloc((void **) &states, numBlocks*sizeof(curandState_t));
+	initCurand<<numBlocks, 1>>>(time(0), states);
+
+	// Alternate between SGD and computing features
+	for (size_t i=0; i<nPoints; ++i) {
+		cudaRbf<<<numBlocks, threadsPerBlock>>>
+			(d_pointsX, d_pointsY, d_pointsZ, d_features, i, lengthScale);
+		cudaSgd<<numBlocks, threadsPerBlock>>>
+			(d_occupancy, d_weights, d_features, 
+								i, states, learningRate, regularisationLambda);
+
+	}
+
+	// Copy weights to host memory
+	float *h_weights = (float *) malloc(size);
+	cudaMemcpy(h_weights, d_weights, size, cudaMemcpyDeviceToHost);
+	Eigen::EigenXf outputWeights = convertWeightPointerToEigen(h_weights, nPoints); 
+	
+
+	// Delete device memory
+	cudaFree(d_pointsX);
+	cudaFree(d_pointsY);
+	cudaFree(d_pointsZ);
+	cudaFree(d_occupancy);
+	cudaFree(d_occupancy);
+	cudaFree(d_weights);
+	cudaFree(d_features);
+
+	// Delete host memory
+
 	return tmp;	
 }
 
@@ -66,14 +138,14 @@ Eigen::MatrixXf convertWeightPointerToEigen(float *h_weights, int nWeights)
 
 
 __global__ void cudaRbf(float *d_x, float *d_y, float *d_z,
-                        float *outputFeatures, int *d_pointIdx,
-                        float *d_lengthScale)
+                        float *outputFeatures, int d_pointIdx,
+                        float d_lengthScale)
 {
     int cudaIdx = threadIdx.x + blockIdx.x * blockDim.x;
 
-    float diff = (d_x[cudaIdx] - d_x[*d_pointIdx]) * (d_x[cudaIdx] - d_x[*d_pointIdx]) +
-                 (d_y[cudaIdx] - d_y[*d_pointIdx]) * (d_y[cudaIdx] - d_y[*d_pointIdx]) +
-                 (d_z[cudaIdx] - d_z[*d_pointIdx]) * (d_z[cudaIdx] - d_z[*d_pointIdx]);
+    float diff = (d_x[cudaIdx] - d_x[d_pointIdx]) * (d_x[cudaIdx] - d_x[d_pointIdx]) +
+                 (d_y[cudaIdx] - d_y[d_pointIdx]) * (d_y[cudaIdx] - d_y[d_pointIdx]) +
+                 (d_z[cudaIdx] - d_z[d_pointIdx]) * (d_z[cudaIdx] - d_z[d_pointIdx]);
 
 	outputFeatures[cudaIdx] = (float) exp(-*d_lengthScale * diff);
 }
@@ -81,7 +153,7 @@ __global__ void cudaRbf(float *d_x, float *d_y, float *d_z,
 __global__ void cudaSgd(int *d_occupancy,
                         float *d_weights,
                         float *d_features,
-                        int *d_pointIdx,
+                        int d_pointIdx,
                         curandState_t *states,
 						float learningRate,
 						float lambda)
@@ -89,7 +161,7 @@ __global__ void cudaSgd(int *d_occupancy,
     int cudaIdx = threadIdx.x + blockIdx.x * blockDim.x;
 
     // If this is is the first example, just initialise the weights
-	if (*d_pointIdx == 0) {
+	if (d_pointIdx == 0) {
 	      // Random value between 0 and 1
 	      d_weights[cudaIdx] = (float) (curand(&states[blockIdx.x]) % 1000) / 1000.0; 
 	} else {
@@ -107,3 +179,7 @@ __global__ void cudaSgd(int *d_occupancy,
 	}
 }
 
+__global__ void initCurand(unsigned int seed, curandState_t* states)
+{
+    curand_init(seed, blockIdx.x, 0, &states[blockIdx.x]);
+}
