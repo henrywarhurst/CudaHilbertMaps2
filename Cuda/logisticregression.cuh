@@ -13,7 +13,7 @@ Eigen::MatrixXf runLogisticRegression(const Eigen::MatrixXf &points,
 									  float learningRate,
 									  float regularisationLambda);
 
-void printStats(size_t nPoints, size_t dataSize);
+void printStats(size_t nPoints, size_t dataSize, size_t nCudaBlocks);
 
 int getNumBlocks(int numDataPoints, int maxThreads);
 

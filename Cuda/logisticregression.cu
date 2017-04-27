@@ -1,6 +1,9 @@
 #include <eigen3/Eigen/Core>
 #include <cmath>
 #include <iostream>
+#include <string>
+#include <ctime>
+
 #include <curand.h>
 #include <curand_kernel.h>
 
@@ -15,11 +18,12 @@ Eigen::MatrixXf runLogisticRegression(const Eigen::MatrixXf &points,
                                       float learningRate,
                                       float regularisationLambda)
 {
+	clock_t begin = clock();
+	
 	// Memory computation
 	size_t nPoints = points.rows();
 	size_t size = nPoints*sizeof(float);
 
-	printStats(nPoints, size);
 
 	// Allocate host memory
 	float *h_pointsX, *h_pointsY, *h_pointsZ;
@@ -57,25 +61,33 @@ Eigen::MatrixXf runLogisticRegression(const Eigen::MatrixXf &points,
 	cudaDeviceProp props;
 	cudaGetDeviceProperties(&props, 0);
 	int maxThreads = props.maxThreadsPerBlock;
-	int numBlocks = getNumBlocks(nPoints, maxThreads);	
-	std::cout << "Using " << numBlocks << " blocks of memory on the GPU";
-	std::cout << std::endl;
+	int nBlocks = getNumBlocks(nPoints, maxThreads);	
+
+	printStats(nPoints, size, nBlocks);
 
 	// Setup Random Number Generator
 	curandState_t* states;
-	cudaMalloc((void **) &states, numBlocks*sizeof(curandState_t));
-	initCurand<<<numBlocks, 1>>>(time(0), states);
+	cudaMalloc((void **) &states, nBlocks*sizeof(curandState_t));
+	initCurand<<<nBlocks, 1>>>(time(0), states);
 
+	std::cout << "Running SGD" << std::endl;
 	// Alternate between SGD and computing features
 	for (size_t i=0; i<nPoints; ++i) {
 		// Compute features for this point
-		cudaRbf<<<numBlocks, maxThreads>>>
+		cudaRbf<<<nBlocks, maxThreads>>>
 				(d_pointsX, d_pointsY, d_pointsZ, d_features, i, lengthScale);
 		// Run one SGD step using features from this point
-		cudaSgd<<<numBlocks, maxThreads>>>
+		cudaSgd<<<nBlocks, maxThreads>>>
 				(d_occupancy, d_weights, d_features, 
 								i, states, learningRate, regularisationLambda);
+		if (i % 1000 == 0) {
+			//std::cout << "." << std::flush;
+			std::cout << "\r" << i << "/" << nPoints << " processed";
+			std::cout << std::flush;
+		}
 	}
+	std::cout << std::endl;
+	std::cout << "SGD complete" << std::endl;
 
 	// Copy weights to host memory
 	float *h_weights = (float *) malloc(size);
@@ -95,18 +107,23 @@ Eigen::MatrixXf runLogisticRegression(const Eigen::MatrixXf &points,
 	free(h_pointsY);
 	free(h_pointsZ);
 	free(h_occupancy);
+	
+	clock_t end = clock();
+	double elapsedSecs = double(end - begin) / CLOCKS_PER_SEC;
+	std::cout << "Took " << elapsedSecs << " seconds to train" << std::endl;
 
 	return outputWeights;	
 }
 
 
-void printStats(size_t nPoints, size_t dataSize)
+void printStats(size_t nPoints, size_t dataSize, size_t nCudaBlocks)
 {
 	std::cout << "********* CUDA LOGISTIC REGRESSION *********" << std::endl;
 	std::cout << "Number of points: " << nPoints << std::endl;
-	std::cout << "Amount of memory for points" << std::endl;
+	std::cout << "Amount of memory for points: ";
 	std::cout << dataSize/1000000.0 << "MB" << std::endl;
-	std::cout << "********************************************" << std::endl;
+	std::cout << "Using " << nCudaBlocks << " blocks of memory on the GPU";
+	std::cout << std::endl;
 }
 
 
