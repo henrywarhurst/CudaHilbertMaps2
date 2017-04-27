@@ -7,6 +7,7 @@
 #include "logisticregression.cuh"
 
 
+
 // Should take in datapoints as eigen matrix (N x 3) input
 Eigen::MatrixXf runLogisticRegression(const Eigen::MatrixXf &points,
                                       const Eigen::MatrixXi &occupancy,
@@ -15,11 +16,10 @@ Eigen::MatrixXf runLogisticRegression(const Eigen::MatrixXf &points,
                                       float regularisationLambda)
 {
 	// Memory computation
-	size_t nPoints = points.size();
+	size_t nPoints = points.rows();
 	size_t size = nPoints*sizeof(float);
-	std::cout << "Number of points: " << nPoints << std::endl;
-	std::cout << "Amount of memory for points" << std::endl;
-	std::cout << size << std::endl;
+
+	printStats(nPoints, size);
 
 	// Allocate host memory
 	float *h_pointsX, *h_pointsY, *h_pointsZ;
@@ -33,8 +33,6 @@ Eigen::MatrixXf runLogisticRegression(const Eigen::MatrixXf &points,
 	// Put input values into raw host memory
 	convertEigenInputToPointers(points, occupancy, 
 					h_pointsX, h_pointsY, h_pointsZ, h_occupancy);	
-
-	std::cout << "Got past the eigen conversion" << std::endl;
 
 	// Allocate device memory
 	float *d_pointsX, *d_pointsY, *d_pointsZ;
@@ -101,6 +99,17 @@ Eigen::MatrixXf runLogisticRegression(const Eigen::MatrixXf &points,
 	return outputWeights;	
 }
 
+
+void printStats(size_t nPoints, size_t dataSize)
+{
+	std::cout << "********* CUDA LOGISTIC REGRESSION *********" << std::endl;
+	std::cout << "Number of points: " << nPoints << std::endl;
+	std::cout << "Amount of memory for points" << std::endl;
+	std::cout << dataSize/1000000.0 << "MB" << std::endl;
+	std::cout << "********************************************" << std::endl;
+}
+
+
 int getNumBlocks(int numDataPoints, int maxThreads)
 {
 	return (int) ceil((float) numDataPoints / (double) maxThreads);
@@ -127,10 +136,16 @@ void convertEigenInputToPointers(const Eigen::MatrixXf &points,
                                  int   *h_occupancy)
 {
 	// TODO: Add some kind of size checking here
-	float *fullPointsOutput = (float *) malloc(sizeof(float) * points.rows() * points.cols());
-	int *occupancyOutput = (int *) malloc(sizeof(int) * occupancy.cols());
+	float *fullPointsOutput = (float *) malloc(sizeof(float) * points.size());
+	int *occupancyOutput = (int *) malloc(sizeof(int) * occupancy.rows());
 
-	// Coordinate copy
+	// Convert eigen matrices to raw C data types
+	Eigen::Map<Eigen::MatrixXf>(fullPointsOutput, points.rows(), points.cols()) = 
+						points;
+	Eigen::Map<Eigen::MatrixXi>(occupancyOutput, occupancy.rows(), occupancy.cols()) =
+						occupancy;
+
+	// Copy data 
 	std::copy(fullPointsOutput + 0 * points.rows(), 
 			  fullPointsOutput + 1 * points.rows(), 
 			  h_pointsX);
@@ -141,7 +156,6 @@ void convertEigenInputToPointers(const Eigen::MatrixXf &points,
 			  fullPointsOutput + 3 * points.rows(), 
 			  h_pointsZ);
 
-	// Occupancy copy
 	std::copy(occupancyOutput, 
 			  occupancyOutput + occupancy.rows(), 
 			  h_occupancy);	
