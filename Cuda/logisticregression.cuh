@@ -6,12 +6,6 @@
 #include <curand.h>
 #include <curand_kernel.h>
 
-#if __CUDA_ARCH__ < 300
-#define MAX_THREADS 512
-#else
-#define MAX_THREADS 1024
-#endif
-
 // Should take in datapoints as eigen matrix (N x 3) input
 Eigen::MatrixXf runLogisticRegression(const Eigen::MatrixXf &points,
 									  const Eigen::MatrixXi &occupancy,
@@ -19,7 +13,7 @@ Eigen::MatrixXf runLogisticRegression(const Eigen::MatrixXf &points,
 									  float learningRate,
 									  float regularisationLambda);
 
-int getNumBlocks(int numDataPoints);
+int getNumBlocks(int numDataPoints, int maxThreads);
 
 void convertEigenInputToPointers(const Eigen::MatrixXf &points,
 								 const Eigen::MatrixXi &occupancy,
@@ -43,9 +37,6 @@ __global__ void cudaSgd(int *d_occupancy,
 						float lambda);
 
 __global__ void initCurand(unsigned int seed, curandState_t* states);
-
-void print_hi();
-
 
 
 #endif /* CUDA_LOGISTICREGRESSION_CUH_ */

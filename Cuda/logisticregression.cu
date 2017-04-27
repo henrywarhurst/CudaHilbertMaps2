@@ -6,14 +6,10 @@
 
 #include "logisticregression.cuh"
 
-void print_hi()
-{
-	std::cout << "print_hi" << std::endl;
-}
 
 // Should take in datapoints as eigen matrix (N x 3) input
-Eigen::MatrixXf runLogisticRegression(Eigen::MatrixXf points,
-                                      Eigen::MatrixXi occupancy,
+Eigen::MatrixXf runLogisticRegression(const Eigen::MatrixXf &points,
+                                      const Eigen::MatrixXi &occupancy,
                                       float lengthScale,
                                       float learningRate,
                                       float regularisationLambda)
@@ -21,6 +17,9 @@ Eigen::MatrixXf runLogisticRegression(Eigen::MatrixXf points,
 	// Memory computation
 	size_t nPoints = points.size();
 	size_t size = nPoints*sizeof(float);
+	std::cout << "Number of points: " << nPoints << std::endl;
+	std::cout << "Amount of memory for points" << std::endl;
+	std::cout << size << std::endl;
 
 	// Allocate host memory
 	float *h_pointsX, *h_pointsY, *h_pointsZ;
@@ -34,6 +33,8 @@ Eigen::MatrixXf runLogisticRegression(Eigen::MatrixXf points,
 	// Put input values into raw host memory
 	convertEigenInputToPointers(points, occupancy, 
 					h_pointsX, h_pointsY, h_pointsZ, h_occupancy);	
+
+	std::cout << "Got past the eigen conversion" << std::endl;
 
 	// Allocate device memory
 	float *d_pointsX, *d_pointsY, *d_pointsZ;
@@ -55,7 +56,10 @@ Eigen::MatrixXf runLogisticRegression(Eigen::MatrixXf points,
 	cudaMemcpy(d_occupancy, h_occupancy, 	size, cudaMemcpyHostToDevice);
 
 	// Compute device parameters
-	int numBlocks = getNumBlocks(nPoints);	
+	cudaDeviceProp props;
+	cudaGetDeviceProperties(&props, 0);
+	int maxThreads = props.maxThreadsPerBlock;
+	int numBlocks = getNumBlocks(nPoints, maxThreads);	
 	std::cout << "Using " << numBlocks << " blocks of memory on the GPU";
 	std::cout << std::endl;
 
@@ -67,10 +71,10 @@ Eigen::MatrixXf runLogisticRegression(Eigen::MatrixXf points,
 	// Alternate between SGD and computing features
 	for (size_t i=0; i<nPoints; ++i) {
 		// Compute features for this point
-		cudaRbf<<<numBlocks, MAX_THREADS>>>
+		cudaRbf<<<numBlocks, maxThreads>>>
 				(d_pointsX, d_pointsY, d_pointsZ, d_features, i, lengthScale);
 		// Run one SGD step using features from this point
-		cudaSgd<<<numBlocks, MAX_THREADS>>>
+		cudaSgd<<<numBlocks, maxThreads>>>
 				(d_occupancy, d_weights, d_features, 
 								i, states, learningRate, regularisationLambda);
 	}
@@ -97,9 +101,9 @@ Eigen::MatrixXf runLogisticRegression(Eigen::MatrixXf points,
 	return outputWeights;	
 }
 
-int getNumBlocks(int numDataPoints)
+int getNumBlocks(int numDataPoints, int maxThreads)
 {
-	return (int) ceil((float) numDataPoints / (double) MAX_THREADS);
+	return (int) ceil((float) numDataPoints / (double) maxThreads);
 }
 
 /**
