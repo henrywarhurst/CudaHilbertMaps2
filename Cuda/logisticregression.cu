@@ -11,7 +11,19 @@
 
 
 
-// Should take in datapoints as eigen matrix (N x 3) input
+/**
+ * Access point for computing Hilbert features and running 
+ * building logistic regression model using SGD.
+ *
+ * @param points (N x 3) matrix of (x, y, z) coordinates for each point
+ * @param occupancy (N x 1) matrix of {1, -1} occupancy values
+ * @param lengthScale length scale to use with RBF kernel
+ * @param learningRate SGD learning rate (alpha)
+ * @param regularisationLambda regularisation constant (L2 norm)
+ *
+ * @returns (N x 1) matrix of logistic function parameter weights
+ *
+ */
 Eigen::MatrixXf runLogisticRegression(const Eigen::MatrixXf &points,
                                       const Eigen::MatrixXi &occupancy,
                                       float lengthScale,
