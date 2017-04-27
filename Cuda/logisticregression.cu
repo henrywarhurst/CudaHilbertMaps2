@@ -30,7 +30,7 @@
 
 
 /**
- * Access point for computing Hilbert features and running 
+ * \brief Access point for computing Hilbert features and running 
  * building logistic regression model using SGD.
  *
  * \param points (N x 3) matrix of (x, y, z) coordinates for each point
