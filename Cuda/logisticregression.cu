@@ -100,6 +100,8 @@ Eigen::MatrixXf runLogisticRegression(const Eigen::MatrixXf &points,
 	cudaMalloc((void **) &states, nBlocks*sizeof(curandState_t));
 	initCurand<<<nBlocks, 1>>>(time(0), states);
 
+	std::cout << "The number of threads per block is: " << maxThreads << std::endl;
+
 	std::cout << "Running SGD" << std::endl;
 	// Alternate between SGD and computing features
 	for (size_t i=0; i<nPoints; ++i) {
