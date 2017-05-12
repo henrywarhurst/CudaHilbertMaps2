@@ -258,6 +258,8 @@ Eigen::MatrixXf convertFloatArrayToEigen(float *h_array, size_t nElements)
 	return Eigen::Map<Eigen::MatrixXf>(h_array, 1, nElements);
 }
 
+
+// TODO: COMMENT THIS FUNCTION
 Eigen::MatrixXf getFeatures(Eigen::Vector3f point, const Eigen::MatrixXf &featurePoints, float lengthScale)
 {		
 	// memory computation

@@ -1,3 +1,6 @@
+#include <cmath>
+#include <iostream>
+
 #include "Cuda/logisticregression.cuh"
 #include "hilbertmap.h"
 
@@ -28,9 +31,14 @@ Eigen::MatrixXf HilbertMap::getWeights() const
 double HilbertMap::query(Eigen::Vector3f point)
 {
 	Eigen::MatrixXf features = getFeatures(point, points_, lengthScale_);
+
+	//Multiply the features with the weights to get the occupancy prediction
+	Eigen::MatrixXf queryResult = features * weights_.transpose();
+
+	std::cout << "queryResults is " << queryResult(0,0) << std::endl;
+	float probability = 1/(1 + exp(-queryResult(0,0)));
 	
-	//TODO: Delete this line
-	return 69;
+	return probability;
 }
 
 void savePoseViewToPcd(Eigen::Matrix4f pose)
