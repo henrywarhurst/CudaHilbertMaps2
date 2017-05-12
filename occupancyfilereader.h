@@ -3,6 +3,7 @@
 
 #include <string>
 #include <fstream>
+#include <vector>
 
 #include <eigen3/Eigen/Dense>
 
@@ -17,7 +18,12 @@ class OccupancyFileReader
 		Eigen::MatrixXi getOccupancy() const;
 
 	private:
-		std::string path_;
+		std::string configFileName_;
+
+		std::vector<int> xPoints_;
+		std::vector<int> yPoints_;
+		std::vector<int> zPoints_;
+		std::vector<int> oPoints_;
 
 		Eigen::MatrixXd points_;
 		Eigen::MatrixXi occupancy_;
@@ -26,4 +32,3 @@ class OccupancyFileReader
 
 
 #endif /* OCCUPANCYFILEREADER_H_ */
-
