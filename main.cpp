@@ -20,8 +20,9 @@
 #include <eigen3/Eigen/Dense>
 
 #include "occupancyfilereader.h"
+#include "hilbertmap.h"
 
-#include "./Cuda/logisticregression.cuh"
+#include "Cuda/logisticregression.cuh"
 
 int testMillionPoints()
 {
@@ -41,6 +42,23 @@ int testMillionPoints()
 	return 0;
 }
 
+void testHilbertMap1()
+{
+	float lengthScale = 1.0f;
+	float learningRate = 0.001f;
+	float regularisationLambda = 1.0f;
+	size_t numPoints = 1000000;
+
+	Eigen::MatrixXf points = Eigen::MatrixXf::Random(numPoints, 3);
+	Eigen::MatrixXi occupancy = Eigen::MatrixXi::Zero(numPoints, 1);	
+	
+	HilbertMap hm(lengthScale);
+
+	hm.train(points, occupancy, learningRate, regularisationLambda);
+
+	Eigen::MatrixXf weights = hm.getWeights();
+}
+
 int main()
 {
 	OccupancyFileReader fileReader("/home/henry/ICPCUDA_results/run1/config.ini");	
@@ -52,6 +70,8 @@ int main()
 	std::cout << points << std::endl;
 
 	std::cout << occupancy << std::endl;
+
+	testHilbertMap1();
 	
 	return 0;
 }

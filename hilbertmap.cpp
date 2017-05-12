@@ -1,4 +1,4 @@
-#include "./Cuda/logisticregression.cuh"
+#include "Cuda/logisticregression.cuh"
 #include "hilbertmap.h"
 
 HilbertMap::HilbertMap(float lengthScale)
@@ -17,6 +17,11 @@ void HilbertMap::train( Eigen::MatrixXf points,
 						              lengthScale_,
 						              learningRate,
 						              regularisationLambda);
+}
+
+Eigen::MatrixXf HilbertMap::getWeights() const
+{
+	return weights_;
 }
 
 double HilbertMap::query(Eigen::Vector3f point)

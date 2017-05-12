@@ -15,6 +15,8 @@ class HilbertMap
 		
 		double query(Eigen::Vector3f point);
 
+		Eigen::MatrixXf getWeights() const;
+
 		void savePoseViewToPcd(Eigen::Matrix4f pose);
 
     private:
