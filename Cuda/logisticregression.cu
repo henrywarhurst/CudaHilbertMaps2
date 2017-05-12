@@ -51,9 +51,8 @@ Eigen::MatrixXf runLogisticRegression(const Eigen::MatrixXf &points,
 	clock_t begin = clock();
 	
 	// memory computation
-	size_t npoints = points.rows();
-	size_t size = npoints*sizeof(float);
-
+	size_t nPoints = points.rows();
+	size_t size = nPoints*sizeof(float);
 
 	// Allocate host memory
 	float *h_pointsX, *h_pointsY, *h_pointsZ;
@@ -146,7 +145,7 @@ Eigen::MatrixXf runLogisticRegression(const Eigen::MatrixXf &points,
 	// Copy weights to host memory
 	float *h_weights = (float *) malloc(size);
 	cudaMemcpy(h_weights, d_weights, size, cudaMemcpyDeviceToHost);
-	Eigen::MatrixXf outputWeights = convertWeightPointerToEigen(h_weights, nPoints); 
+	Eigen::MatrixXf outputWeights = convertFloatArrayToEigen(h_weights, nPoints); 
 	
 
 	// Delete device memory
@@ -256,8 +255,8 @@ Eigen::MatrixXf convertFloatArrayToEigen(float *h_array, size_t nElements)
 Eigen::MatrixXf getFeatures(Eigen::Vector3f point, const Eigen::MatrixXf &featurePoints, float lengthScale)
 {		
 	// memory computation
-	size_t npoints = points.rows();
-	size_t size = npoints*sizeof(float);
+	size_t nPoints = featurePoints.rows();
+	size_t size = nPoints*sizeof(float);
 
 	// Compute device parameters
 	cudaDeviceProp props;
@@ -307,6 +306,7 @@ Eigen::MatrixXf getFeatures(Eigen::Vector3f point, const Eigen::MatrixXf &featur
 	cudaMalloc((void **) &d_queryX, 	sizeof(float));
 	cudaMalloc((void **) &d_queryY, 	sizeof(float));
 	cudaMalloc((void **) &d_queryZ, 	sizeof(float));
+	cudaMalloc((void **) &d_lengthScale,sizeof(float));
     
 	cudaMemcpy(d_pointsX, 		h_pointsX, 		size, 			cudaMemcpyHostToDevice);
  	cudaMemcpy(d_pointsY, 		h_pointsY, 		size, 			cudaMemcpyHostToDevice); 
