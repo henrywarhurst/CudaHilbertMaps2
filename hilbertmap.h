@@ -6,11 +6,9 @@
 class HilbertMap
 {
     public:
-		HilbertMap(float lengthScale);
+		HilbertMap(float lengthScale, Eigen::MatrixXf points, Eigen::MatrixXi occupancy);
 
-		void train(	Eigen::MatrixXf points, 
-					Eigen::MatrixXi occupancy, 
-					float learningRate,
+		void train(	float learningRate,
 					float regularisationLambda);
 		
 		double query(Eigen::Vector3f point);
@@ -21,6 +19,8 @@ class HilbertMap
 
     private:
 		float lengthScale_;
+		Eigen::MatrixXf points_;
+		Eigen::MatrixXi occupancy_;
 		Eigen::MatrixXf weights_;
 		
 };

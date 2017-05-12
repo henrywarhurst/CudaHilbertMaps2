@@ -150,10 +150,16 @@ Eigen::MatrixXf runLogisticRegression(const Eigen::MatrixXf &points,
 
 	// Delete device memory
 	cudaFree(d_pointsX);
-	cudaFree(d_pointsY); cudaFree(d_pointsZ); cudaFree(d_occupancy);
+	cudaFree(d_pointsY); 
+	cudaFree(d_pointsZ); 
+	cudaFree(d_occupancy);
 	cudaFree(d_occupancy);
 	cudaFree(d_weights);
 	cudaFree(d_features);
+	cudaFree(d_queryX);
+	cudaFree(d_queryY);
+	cudaFree(d_queryZ);
+	cudaFree(d_lengthScale);
 
 	// Delete host memory
 	free(h_pointsX);
@@ -330,7 +336,23 @@ Eigen::MatrixXf getFeatures(Eigen::Vector3f point, const Eigen::MatrixXf &featur
 	h_features = (float *) malloc(size);
 	cudaMemcpy(h_features, d_features, size, cudaMemcpyDeviceToHost);
 
-	return convertFloatArrayToEigen(h_features, nPoints);
+	Eigen::MatrixXf vectorFeatures = convertFloatArrayToEigen(h_features, nPoints);
+
+	free(h_pointsX);
+	free(h_pointsY);
+	free(h_pointsZ);
+
+	cudaFree(d_pointsX);
+	cudaFree(d_pointsY);
+	cudaFree(d_pointsZ);
+	cudaFree(d_features);
+	cudaFree(d_queryX);
+	cudaFree(d_queryY);
+	cudaFree(d_queryZ);
+	cudaFree(d_lengthScale);
+
+
+	return vectorFeatures;
 }
 
 /**

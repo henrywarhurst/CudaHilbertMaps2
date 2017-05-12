@@ -52,9 +52,9 @@ void testHilbertMap1()
 	Eigen::MatrixXf points = Eigen::MatrixXf::Random(numPoints, 3);
 	Eigen::MatrixXi occupancy = Eigen::MatrixXi::Zero(numPoints, 1);	
 	
-	HilbertMap hm(lengthScale);
+	HilbertMap hm(lengthScale, points, occupancy);
 
-	hm.train(points, occupancy, learningRate, regularisationLambda);
+	hm.train(learningRate, regularisationLambda);
 
 	Eigen::MatrixXf weights = hm.getWeights();
 }
@@ -71,8 +71,8 @@ void testHilbertMap2()
 	Eigen::MatrixXf points = fileReader.getPoints();
 	Eigen::MatrixXi occupancy = fileReader.getOccupancy();
 	
-	HilbertMap hm(lengthScale);
-	hm.train(points, occupancy, learningRate, regularisationLambda);
+	HilbertMap hm(lengthScale, points, occupancy);
+	hm.train(learningRate, regularisationLambda);
 }
 
 int main()

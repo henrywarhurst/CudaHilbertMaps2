@@ -43,6 +43,8 @@ void convertEigenInputToPointers(const Eigen::MatrixXf &points,
 								 int   *h_occupancy);
 
 Eigen::MatrixXf convertFloatArrayToEigen(float *h_array, size_t nElements);
+
+Eigen::MatrixXf getFeatures(Eigen::Vector3f point, const Eigen::MatrixXf &featurePoints, float lengthScale);
 								 
 __global__ void cudaRbf(float *d_pointsX, 
 						float *d_pointsY, 
