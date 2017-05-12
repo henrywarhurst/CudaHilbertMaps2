@@ -78,7 +78,7 @@ void testHilbertMap2()
 void testHilbertMap3()
 {
 	float lengthScale = 1.0f;
-	float learningRate = 0.001f;
+	float learningRate = 0.00001f;
 	float regularisationLambda = 1.0f;
 
 	OccupancyFileReader fileReader("/home/henry/ICPCUDA_results/run2/config.ini");
@@ -91,7 +91,7 @@ void testHilbertMap3()
 	hm.train(learningRate, regularisationLambda);
 	
 	Eigen::Vector3f queryPoint;
-	queryPoint << -0.83369,-0.594651,1.50173;
+	queryPoint << -0.0492538,-0.0372779,0.0912993;
 
 	float occupancyPrediction = hm.query(queryPoint);
 	std::cout << "Probability of occupancy is " << occupancyPrediction << std::endl;
