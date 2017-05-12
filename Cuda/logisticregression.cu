@@ -50,9 +50,9 @@ Eigen::MatrixXf runLogisticRegression(const Eigen::MatrixXf &points,
 {
 	clock_t begin = clock();
 	
-	// Memory computation
-	size_t nPoints = points.rows();
-	size_t size = nPoints*sizeof(float);
+	// memory computation
+	size_t npoints = points.rows();
+	size_t size = npoints*sizeof(float);
 
 
 	// Allocate host memory
@@ -70,22 +70,29 @@ Eigen::MatrixXf runLogisticRegression(const Eigen::MatrixXf &points,
 
 	// Allocate device memory
 	float *d_pointsX, *d_pointsY, *d_pointsZ;
+	float *d_queryX, *d_queryY, *d_queryZ;
     int *d_occupancy;
     float *d_weights;
 	float *d_features;
+	float *d_lengthScale;
 
     cudaMalloc((void **) &d_pointsX, 	size);
     cudaMalloc((void **) &d_pointsY, 	size); 
 	cudaMalloc((void **) &d_pointsZ, 	size);
+	cudaMalloc((void **) &d_queryX, 	sizeof(float));
+	cudaMalloc((void **) &d_queryY, 	sizeof(float));
+	cudaMalloc((void **) &d_queryZ, 	sizeof(float));
     cudaMalloc((void **) &d_occupancy, 	size);
     cudaMalloc((void **) &d_weights, 	size);
 	cudaMalloc((void **) &d_features, 	size);
+	cudaMalloc((void **) &d_lengthScale,sizeof(float));
 
 	// Copy memory - host to device
 	cudaMemcpy(d_pointsX, 	h_pointsX, 		size, cudaMemcpyHostToDevice);
  	cudaMemcpy(d_pointsY, 	h_pointsY, 		size, cudaMemcpyHostToDevice); 
 	cudaMemcpy(d_pointsZ, 	h_pointsZ, 		size, cudaMemcpyHostToDevice);
 	cudaMemcpy(d_occupancy, h_occupancy, 	size, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_lengthScale, &lengthScale, sizeof(float), cudaMemcpyHostToDevice);
 
 	// Compute device parameters
 	cudaDeviceProp props;
@@ -105,13 +112,28 @@ Eigen::MatrixXf runLogisticRegression(const Eigen::MatrixXf &points,
 	std::cout << "Running SGD" << std::endl;
 	// Alternate between SGD and computing features
 	for (size_t i=0; i<nPoints; ++i) {
+		// Copy current point to the device
+		cudaMemcpy(d_queryX, &h_pointsX[i], sizeof(float), cudaMemcpyHostToDevice);
+		cudaMemcpy(d_queryY, &h_pointsY[i], sizeof(float), cudaMemcpyHostToDevice);
+		cudaMemcpy(d_queryZ, &h_pointsZ[i], sizeof(float), cudaMemcpyHostToDevice);
+
 		// Compute features for this point
-		cudaRbf<<<nBlocks, maxThreads>>>
-				(d_pointsX, d_pointsY, d_pointsZ, d_features, i, lengthScale);
-		// Run one SGD step using features from this point
-		cudaSgd<<<nBlocks, maxThreads>>>
-				(d_occupancy, d_weights, d_features, 
-								i, states, learningRate, regularisationLambda);
+		cudaRbf<<<nBlocks, maxThreads>>>(	d_pointsX, 
+											d_pointsY, 
+											d_pointsZ, 
+											d_features, 
+											d_queryX, 
+											d_queryY, 
+											d_queryZ, 
+											d_lengthScale);
+		// Run one SGD step using features extracted from current point
+		cudaSgd<<<nBlocks, maxThreads>>>(	d_occupancy, 
+											d_weights, 
+											d_features, 
+											i, 
+											states, 
+											learningRate, 
+											regularisationLambda);
 		if (i % 1000 == 0) {
 			//std::cout << "." << std::flush;
 			std::cout << "\r" << i << "/" << nPoints << " processed";
@@ -167,6 +189,7 @@ void printStats(size_t nPoints, size_t dataSize, size_t nCudaBlocks)
 
 int getNumBlocks(int numDataPoints, int maxThreads)
 {
+	
 	return (int) ceil((float) numDataPoints / (double) maxThreads);
 }
 
@@ -225,9 +248,89 @@ void convertEigenInputToPointers(const Eigen::MatrixXf &points,
  *
  * \return The weights as a column vector (N x 1 matrix)
  */
-Eigen::MatrixXf convertWeightPointerToEigen(float *h_weights, size_t nWeights)
+Eigen::MatrixXf convertFloatArrayToEigen(float *h_array, size_t nElements)
 {
-	return Eigen::Map<Eigen::MatrixXf>(h_weights, 1, nWeights);
+	return Eigen::Map<Eigen::MatrixXf>(h_array, 1, nElements);
+}
+
+Eigen::MatrixXf getFeatures(Eigen::Vector3f point, const Eigen::MatrixXf &featurePoints, float lengthScale)
+{		
+	// memory computation
+	size_t npoints = points.rows();
+	size_t size = npoints*sizeof(float);
+
+	// Compute device parameters
+	cudaDeviceProp props;
+	cudaGetDeviceProperties(&props, 0);
+	int maxThreads = props.maxThreadsPerBlock;
+	int nBlocks = getNumBlocks(nPoints, maxThreads);	
+
+	// Allocate host memory
+	float *h_pointsX, *h_pointsY, *h_pointsZ;
+	float h_queryX, h_queryY, h_queryZ;
+	
+	h_pointsX 		= (float *) malloc(size);
+	h_pointsY 		= (float *) malloc(size);
+	h_pointsZ 		= (float *) malloc(size);
+
+	// Extract input point values
+	h_queryX = point(0);
+	h_queryY = point(1);
+	h_queryZ = point(2);
+
+	// Copy points data to raw c arrays
+	float *fullPointsOutput = (float *) malloc(sizeof(float) * featurePoints.size());
+	
+	Eigen::Map<Eigen::MatrixXf>(fullPointsOutput, featurePoints.rows(), featurePoints.cols()) = 
+							featurePoints;
+
+	std::copy(fullPointsOutput + 0 * featurePoints.rows(), 
+			  fullPointsOutput + 1 * featurePoints.rows(), 
+			  h_pointsX);
+	std::copy(fullPointsOutput + 1 * featurePoints.rows(), 
+			  fullPointsOutput + 2 * featurePoints.rows(), 
+			  h_pointsY);
+	std::copy(fullPointsOutput + 2 * featurePoints.rows(), 
+			  fullPointsOutput + 3 * featurePoints.rows(), 
+			  h_pointsZ);
+
+	// Allocate device memory
+	float *d_pointsX, *d_pointsY, *d_pointsZ;
+	float *d_queryX, *d_queryY, *d_queryZ;
+	float *d_features;
+	float *d_lengthScale;
+
+    cudaMalloc((void **) &d_pointsX, 	size);
+    cudaMalloc((void **) &d_pointsY, 	size); 
+	cudaMalloc((void **) &d_pointsZ, 	size);
+	cudaMalloc((void **) &d_features,	size);
+	cudaMalloc((void **) &d_queryX, 	sizeof(float));
+	cudaMalloc((void **) &d_queryY, 	sizeof(float));
+	cudaMalloc((void **) &d_queryZ, 	sizeof(float));
+    
+	cudaMemcpy(d_pointsX, 		h_pointsX, 		size, 			cudaMemcpyHostToDevice);
+ 	cudaMemcpy(d_pointsY, 		h_pointsY, 		size, 			cudaMemcpyHostToDevice); 
+	cudaMemcpy(d_pointsZ, 		h_pointsZ, 		size, 			cudaMemcpyHostToDevice);	
+	cudaMemcpy(d_lengthScale, 	&lengthScale, 	sizeof(float), 	cudaMemcpyHostToDevice);
+	cudaMemcpy(d_queryX,		&h_queryX,		sizeof(float),	cudaMemcpyHostToDevice);
+	cudaMemcpy(d_queryY, 		&h_queryY, 		sizeof(float), 	cudaMemcpyHostToDevice);		
+	cudaMemcpy(d_queryZ, 		&h_queryZ, 		sizeof(float), 	cudaMemcpyHostToDevice);
+
+	// Cuda Kernel
+	cudaRbf<<<nBlocks, maxThreads>>>(	d_pointsX, 
+										d_pointsY, 
+										d_pointsZ, 
+										d_features, 
+										d_queryX, 
+										d_queryY, 
+										d_queryZ, 
+										d_lengthScale);
+
+	float *h_features;
+	h_features = (float *) malloc(size);
+	cudaMemcpy(h_features, d_features, size, cudaMemcpyDeviceToHost);
+
+	return convertFloatArrayToEigen(h_features, nPoints);
 }
 
 /**
@@ -240,17 +343,22 @@ Eigen::MatrixXf convertWeightPointerToEigen(float *h_weights, size_t nWeights)
  * \param d_pointIdx the index of the point in the dataset that we are looking at
  * \param d_lengthScale the length scale to use when computing the RBF function
  */
-__global__ void cudaRbf(float *d_x, float *d_y, float *d_z,
-                        float *outputFeatures, int d_pointIdx,
-                        float d_lengthScale)
+__global__ void cudaRbf(float *d_x, 
+						float *d_y, 
+						float *d_z,
+                        float *d_outputFeatures, 
+						float *d_queryX,
+						float *d_queryY,
+						float *d_queryZ,
+                        float *d_lengthScale)
 {
     int cudaIdx = threadIdx.x + blockIdx.x * blockDim.x;
 
-    float diff = (d_x[cudaIdx] - d_x[d_pointIdx]) * (d_x[cudaIdx] - d_x[d_pointIdx]) +
-                 (d_y[cudaIdx] - d_y[d_pointIdx]) * (d_y[cudaIdx] - d_y[d_pointIdx]) +
-                 (d_z[cudaIdx] - d_z[d_pointIdx]) * (d_z[cudaIdx] - d_z[d_pointIdx]);
+    float diff = (d_x[cudaIdx] - *d_queryX) * (d_x[cudaIdx] - *d_queryX) +
+                 (d_y[cudaIdx] - *d_queryY) * (d_y[cudaIdx] - *d_queryY) +
+                 (d_z[cudaIdx] - *d_queryZ) * (d_z[cudaIdx] - *d_queryZ);
 
-	outputFeatures[cudaIdx] = (float) exp(-d_lengthScale * diff);
+	d_outputFeatures[cudaIdx] = (float) exp(-*d_lengthScale * diff);
 }
 
 /**

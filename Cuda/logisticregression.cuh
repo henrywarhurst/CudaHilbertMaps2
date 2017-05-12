@@ -42,11 +42,16 @@ void convertEigenInputToPointers(const Eigen::MatrixXf &points,
 								 float *h_pointsZ,
 								 int   *h_occupancy);
 
-Eigen::MatrixXf convertWeightPointerToEigen(float *h_weights, size_t numPoints);
+Eigen::MatrixXf convertFloatArrayToEigen(float *h_array, size_t nElements);
 								 
-__global__ void cudaRbf(float *d_pointsX, float *d_pointsY, float *d_pointsZ,
-                        float *d_outputFeatures, int d_pointIdx,
-                        float d_lengthScale);
+__global__ void cudaRbf(float *d_pointsX, 
+						float *d_pointsY, 
+						float *d_pointsZ,
+                        float *d_outputFeatures, 
+						float *d_queryX,
+						float *d_queryY,
+						float *d_queryZ,
+                        float *d_lengthScale);
 
 __global__ void cudaSgd(int *d_occupancy,
                         float *d_weights,
