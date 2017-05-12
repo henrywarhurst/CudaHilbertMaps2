@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <sstream>
+#include <iostream>
 
 OccupancyFileReader::OccupancyFileReader(std::string configFileName)
 	: configFileName_(configFileName)
@@ -10,18 +11,19 @@ OccupancyFileReader::OccupancyFileReader(std::string configFileName)
 void OccupancyFileReader::parse()
 {
 	std::string curLine;
-	ifstream configFile (configFileName_);
+	std::ifstream configFile (configFileName_);
 	if (!configFile.is_open()) {
-		std::cout << "Could not find config file with name: " << configFileName;
+		std::cout << "Could not find config file with name: " << configFileName_;
 		std::cout << std::endl;	
 		return;
 	}	
 
 	while (std::getline(configFile, curLine)) {
-		ifstream curOccupancyFrameFile (curLine);
+		std::ifstream curOccupancyFrameFile (curLine);
 		
 		if (!curOccupancyFrameFile.is_open()) continue;
 
+		std::cout << "Current liine = " << curLine << std::endl;
 		// Read in the current .occ file	
 		std::string occLine;
 		while (std::getline(curOccupancyFrameFile, occLine)) {
@@ -38,6 +40,7 @@ void OccupancyFileReader::parse()
 				} else if (columnIdx == 3) {
 					oPoints_.push_back(std::stoi(cell));
 				}
+				columnIdx++;
 			}			
 		}
 		curOccupancyFrameFile.close();
@@ -57,21 +60,21 @@ void OccupancyFileReader::parse()
 	points_.resize(nPoints, 3);
 	occupancy_.resize(nPoints, 1);
 
-	for (size_t i=0; i<nPoints, ++i) {
-		points_(i, 0) = xPoints[i];
-		points_(i, 1) = yPoints[i];
-		points_(i, 2) = zPoints[i];
+	for (size_t i=0; i<nPoints; ++i) {
+		points_(i, 0) = xPoints_[i];
+		points_(i, 1) = yPoints_[i];
+		points_(i, 2) = zPoints_[i];
 		
-		occupancy_(i, 0) = oPoints[i]; 
+		occupancy_(i, 0) = oPoints_[i]; 
 	}
 }
 
-Eigen::MatrixXd getPoints() const
+Eigen::MatrixXd OccupancyFileReader::getPoints() const
 {
-
+	return points_;
 }
 
-Eigen::MatrixXi getOccupancy() const
+Eigen::MatrixXi OccupancyFileReader::getOccupancy() const
 {
-
+	return occupancy_;
 }

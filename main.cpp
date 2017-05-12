@@ -18,9 +18,12 @@
 
 #include <iostream>
 #include <eigen3/Eigen/Dense>
+
+#include "occupancyfilereader.h"
+
 #include "./Cuda/logisticregression.cuh"
 
-int main()
+int testMillionPoints()
 {
 	float lengthScale = 1.0f;
 	float learningRate = 0.001f;
@@ -34,6 +37,21 @@ int main()
 													lengthScale,
 													learningRate,
 													regularisationLambda);
+	
+	return 0;
+}
+
+int main()
+{
+	OccupancyFileReader fileReader("/home/henry/ICPCUDA_results/run1/config.ini");	
+
+	fileReader.parse();
+	Eigen::MatrixXd points = fileReader.getPoints();
+	Eigen::MatrixXi occupancy = fileReader.getOccupancy();
+
+	std::cout << points << std::endl;
+
+	std::cout << occupancy << std::endl;
 	
 	return 0;
 }
