@@ -14,7 +14,7 @@ class OccupancyFileReader
 		
 		void parse();
 
-		Eigen::MatrixXd getPoints() const;
+		Eigen::MatrixXf getPoints() const;
 		Eigen::MatrixXi getOccupancy() const;
 
 	private:
@@ -25,7 +25,7 @@ class OccupancyFileReader
 		std::vector<int> zPoints_;
 		std::vector<int> oPoints_;
 
-		Eigen::MatrixXd points_;
+		Eigen::MatrixXf points_;
 		Eigen::MatrixXi occupancy_;
 
 };

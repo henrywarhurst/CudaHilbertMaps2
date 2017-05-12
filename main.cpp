@@ -59,19 +59,26 @@ void testHilbertMap1()
 	Eigen::MatrixXf weights = hm.getWeights();
 }
 
+void testHilbertMap2()
+{
+	float lengthScale = 1.0f;
+	float learningRate = 0.001f;
+	float regularisationLambda = 1.0f;
+
+	OccupancyFileReader fileReader("/home/henry/ICPCUDA_results/run1/config.ini");
+	
+	fileReader.parse();
+	Eigen::MatrixXf points = fileReader.getPoints();
+	Eigen::MatrixXi occupancy = fileReader.getOccupancy();
+	
+	HilbertMap hm(lengthScale);
+	hm.train(points, occupancy, learningRate, regularisationLambda);
+}
+
 int main()
 {
-	OccupancyFileReader fileReader("/home/henry/ICPCUDA_results/run1/config.ini");	
-
-	fileReader.parse();
-	Eigen::MatrixXd points = fileReader.getPoints();
-	Eigen::MatrixXi occupancy = fileReader.getOccupancy();
-
-	std::cout << points << std::endl;
-
-	std::cout << occupancy << std::endl;
-
-	testHilbertMap1();
+	//testHilbertMap1();
+	testHilbertMap2();
 	
 	return 0;
 }

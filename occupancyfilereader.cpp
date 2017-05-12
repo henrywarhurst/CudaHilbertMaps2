@@ -69,7 +69,7 @@ void OccupancyFileReader::parse()
 	}
 }
 
-Eigen::MatrixXd OccupancyFileReader::getPoints() const
+Eigen::MatrixXf OccupancyFileReader::getPoints() const
 {
 	return points_;
 }
