@@ -63,7 +63,7 @@ void HilbertMap::savePoseViewToPcd(Eigen::Matrix4f pose)
 			curRay.transformToPose(pose);
 			std::vector<Eigen::Vector3f> curPoints = curRay.getPoints();
 			for (auto &curPoint : curPoints) {
-				double curOccupancyProbability = query(curPoint);
+				double curOccupancyProbability =  query(curPoint);
 				if (curOccupancyProbability > 0.5) {
 					cloudPoint << curPoint(0), curPoint(1), curPoint(2);					
 				}

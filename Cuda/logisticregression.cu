@@ -17,7 +17,7 @@
  */
 
 #include <eigen3/Eigen/Core>
-#include <cmath>
+//#include <cmath>
 #include <iostream>
 #include <string>
 #include <ctime>
@@ -343,6 +343,8 @@ Eigen::MatrixXf getFeatures(Eigen::Vector3f point, const Eigen::MatrixXf &featur
 	free(h_pointsX);
 	free(h_pointsY);
 	free(h_pointsZ);
+	free(h_features);
+	free(fullPointsOutput);
 
 	cudaFree(d_pointsX);
 	cudaFree(d_pointsY);
