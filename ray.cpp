@@ -1,5 +1,7 @@
 #include "ray.h"
 
+#include <iostream>
+
 Ray::Ray(size_t imageU, size_t imageV)
 {
 	for (size_t rayZ=kStartZ; rayZ<kMaxZ; rayZ+=kStepZ) {

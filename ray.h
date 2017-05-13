@@ -31,8 +31,8 @@ class Ray
         static constexpr const double kOpticalCentreY   = 239.5     ;
 
         static constexpr const size_t kMaxZ             = 2000      ;
-        static constexpr const size_t kStepZ            = 200       ;
-        static constexpr const size_t kStartZ           = 100       ;
+        static constexpr const size_t kStepZ            = 100      	;
+        static constexpr const size_t kStartZ           = 100      	;
 };
 
 #endif /* RAY_H_ */

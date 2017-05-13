@@ -77,9 +77,9 @@ void testHilbertMap2()
 
 void testHilbertMap3()
 {
-	float lengthScale = 1.0f;
-	float learningRate = 0.00001f;
-	float regularisationLambda = 1.0f;
+	float lengthScale = 1.9f;
+	float learningRate = 0.00000005f;
+	float regularisationLambda = 1500.0f;
 
 	OccupancyFileReader fileReader("/home/henry/ICPCUDA_results/run2/config.ini");
 	
@@ -91,17 +91,69 @@ void testHilbertMap3()
 	hm.train(learningRate, regularisationLambda);
 	
 	Eigen::Vector3f queryPoint;
-	queryPoint << -0.0492538,-0.0372779,0.0912993;
+	queryPoint << 0.60547,0.700588,1.4817;
 
 	float occupancyPrediction = hm.query(queryPoint);
-	std::cout << "Probability of occupancy is " << occupancyPrediction << std::endl;
+	std::cout << "Expected 1, got: " << occupancyPrediction << std::endl;
+
+	Eigen::Vector3f queryPoint2;
+	queryPoint2 << 0.236811,0.235779,0.487282;
+	occupancyPrediction = hm.query(queryPoint2);
+	std::cout << "Expected -1, got: " << occupancyPrediction << std::endl;
+}
+
+void testHilbertMap4()
+{
+
+    float lengthScale = 1.9f;
+    float learningRate = 0.000001f;
+    float regularisationLambda = 1500.0f;
+
+    OccupancyFileReader fileReader("/home/henry/ICPCUDA_results/run2/config.ini");
+
+    fileReader.parse();
+    Eigen::MatrixXf points = fileReader.getPoints();
+    Eigen::MatrixXi occupancy = fileReader.getOccupancy();
+
+    HilbertMap hm(lengthScale, points, occupancy);
+    hm.train(learningRate, regularisationLambda);
+
+    Eigen::Vector3f queryPoint;
+	queryPoint << 0.463714,-0.407143,0.5;
+
+    float occupancyPrediction = hm.query(queryPoint);
+    std::cout << "Expected 0, got: " << occupancyPrediction << std::endl;
+
+    queryPoint << 0.463714,-0.407143,0.6;
+
+    occupancyPrediction = hm.query(queryPoint);
+    std::cout << "Expected 0, got: " << occupancyPrediction << std::endl;
+
+    queryPoint << 0.463714,-0.407143,0.9;
+
+    occupancyPrediction = hm.query(queryPoint);
+    std::cout << "Expected 0.5, got: " << occupancyPrediction << std::endl;
+
+    queryPoint << 0.463714,-0.407143,1.2;
+
+    occupancyPrediction = hm.query(queryPoint);
+    std::cout << "Expected 1, got: " << occupancyPrediction << std::endl;
+
+	queryPoint << 0.604819,0.611446,1.28204;
+	occupancyPrediction = hm.query(queryPoint);
+	std::cout << "Expected -1, got: " << occupancyPrediction << std::endl;
+
+	queryPoint << 0.604819,0.611446,0.95;
+	occupancyPrediction = hm.queryHost(queryPoint);
+	std::cout << "Expected -1, got: " << occupancyPrediction << std::endl;
+
 }
 
 void testHilbertMapSaveView1()
 {
-	float lengthScale = 1.0f;
-	float learningRate = 0.00001f;
-	float regularisationLambda = 1.0f;
+	float lengthScale = 130.0f;
+	float learningRate = 0.001f;
+	float regularisationLambda = 10.0f;
 
 	OccupancyFileReader fileReader("/home/henry/ICPCUDA_results/run2/config.ini");
 	
@@ -126,6 +178,7 @@ int main()
 	//testHilbertMap1();
 	//testHilbertMap2();
 	//testHilbertMap3();
+	//testHilbertMap4();
 	testHilbertMapSaveView1();
 	
 	return 0;

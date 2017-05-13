@@ -82,7 +82,7 @@ void HilbertMap::savePoseViewToPcd(Eigen::Matrix4f pose)
 			Eigen::Vector3f cloudPoint;
 			cloudPoint << 0, 0, 0;
 			Ray curRay(u, v);
-			curRay.transformToPose(pose);
+			//curRay.transformToPose(pose);
 			std::vector<Eigen::Vector3f> curPoints = curRay.getPoints();
 			for (auto &curPoint : curPoints) {
 				double curOccupancyProbability =  queryHost(curPoint);
@@ -92,8 +92,8 @@ void HilbertMap::savePoseViewToPcd(Eigen::Matrix4f pose)
 				}
 			}
 			std::cout << "\r" << "u = " << u << " v = " << v;
-			std::cout << " X = " << cloudPoint(0) << " Y = " << cloudPoint(1) << " Z = " << cloudPoint(2);
-            std::cout << std::flush;
+			std::cout << " X = " << cloudPoint(0) << " Y = " << cloudPoint(1) << " Z = " << cloudPoint(2) << std::endl;
+            //std::cout << std::flush;
 
 			cloudPoints.push_back(cloudPoint);
 		}
