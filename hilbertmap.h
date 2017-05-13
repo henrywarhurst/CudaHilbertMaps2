@@ -12,6 +12,9 @@ class HilbertMap
 					float regularisationLambda);
 		
 		double query(Eigen::Vector3f point);
+		double queryHost(Eigen::Vector3f point);
+
+		Eigen::MatrixXf getFeaturesHost(Eigen::Vector3f point);
 
 		Eigen::MatrixXf getWeights() const;
 
