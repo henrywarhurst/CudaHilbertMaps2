@@ -97,11 +97,36 @@ void testHilbertMap3()
 	std::cout << "Probability of occupancy is " << occupancyPrediction << std::endl;
 }
 
+void testHilbertMapSaveView1()
+{
+	float lengthScale = 1.0f;
+	float learningRate = 0.00001f;
+	float regularisationLambda = 1.0f;
+
+	OccupancyFileReader fileReader("/home/henry/ICPCUDA_results/run2/config.ini");
+	
+	fileReader.parse();
+	Eigen::MatrixXf points = fileReader.getPoints();
+	Eigen::MatrixXi occupancy = fileReader.getOccupancy();
+	
+	HilbertMap hm(lengthScale, points, occupancy);
+	hm.train(learningRate, regularisationLambda);
+
+	Eigen::Matrix4f testPose;
+	testPose <<	 0.9998, -0.0184,  0.0104,  0.0068,
+				 0.0184,  0.9998,  0.0039,  0.0025,
+				-0.0105, -0.0037,  0.9999, -0.0094,
+				 0.0000,  0.0000,  0.0000,  1.0000;
+
+	hm.savePoseViewToPcd(testPose);
+}
+
 int main()
 {
 	//testHilbertMap1();
 	//testHilbertMap2();
-	testHilbertMap3();
+	//testHilbertMap3();
+	testHilbertMapSaveView1();
 	
 	return 0;
 }

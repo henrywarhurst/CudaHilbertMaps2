@@ -24,6 +24,12 @@ set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} "--ftz=true;--prec-div=false;--prec-sqrt=
 
 CUDA_COMPILE(cuda_objs ${cuda})
 
+find_package(PCL 1.3 REQUIRED COMPONENTS common io)
+
+include_directories(${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+
 set(CMAKE_CXX_FLAGS ${ADDITIONAL_CMAKE_CXX_FLAGS} "-O3 -msse2 -msse3 -Wall -std=c++11")
 
 add_library(cudahilbertmaps SHARED
@@ -37,6 +43,8 @@ add_library(cudahilbertmaps SHARED
 target_link_libraries(cudahilbertmaps
 					  ${Eigen_LIBRARIES}
 					  ${CUDA_LIBRARIES}
+                      ${PCL_COMMON_LIBRARIES}
+                      ${PCL_IO_LIBRARIES}
 )
 
 INSTALL(TARGETS cudahilbertmaps
@@ -56,6 +64,6 @@ add_executable(output
 target_link_libraries(output
 					  ${Eigen_LIBRARIES}
 					  ${CUDA_LIBRARIES}
+                      ${PCL_COMMON_LIBRARIES}
+                      ${PCL_IO_LIBRARIES}
 )
-
-

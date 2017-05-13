@@ -14,6 +14,8 @@ class Ray
 
 		void transformToPose(Eigen::Matrix4f pose);
 
+		std::vector<Eigen::Vector3f> getPoints() const;
+
 		void setSurfaceIntersectionPoint(Eigen::Vector3f surfaceIntersectionPoint);
 		Eigen::Vector3f getSurfaceIntersectionPoint() const;
 

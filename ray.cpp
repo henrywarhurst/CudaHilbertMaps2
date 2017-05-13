@@ -11,10 +11,17 @@ Ray::Ray(size_t imageU, size_t imageV)
 		curPoint << curX, curY, curZ;
 		pointsOriginal_.push_back(curPoint);
 	}
+	pointsTransformed_ = pointsOriginal_;
 }	
 
-size_t Ray::size() {
+size_t Ray::size() 
+{
 	return pointsOriginal_.size();
+}
+
+std::vector<Eigen::Vector3f> Ray::getPoints() const
+{
+	return pointsTransformed_;
 }
 
 void Ray::transformToPose(Eigen::Matrix4f pose)
