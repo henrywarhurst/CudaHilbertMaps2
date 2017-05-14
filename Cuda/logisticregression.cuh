@@ -19,12 +19,13 @@
 #ifndef CUDA_LOGISTICREGRESSION_CUH_
 #define CUDA_LOGISTICREGRESSION_CUH_
 
+#include <vector>
+
 #include <eigen3/Eigen/Dense>
 
 #include <curand.h>
 #include <curand_kernel.h>
 
-#include "ray.h"
 
 // Should take in datapoints as eigen matrix (N x 3) input
 Eigen::MatrixXf runLogisticRegression(const Eigen::MatrixXf &points,
@@ -48,7 +49,7 @@ Eigen::MatrixXf convertFloatArrayToEigen(float *h_array, size_t nElements);
 
 std::vector<Eigen::Vector3f> getCloud(	Eigen::MatrixXf weights, 
 										Eigen::MatrixXf points, 
-										std::vector<Ray> rays, 
+										std::vector<std::vector<Eigen::Vector3f> > rays, 
 										float lengthScale);
 
 Eigen::MatrixXf getFeatures(Eigen::Vector3f point, const Eigen::MatrixXf &featurePoints, float lengthScale);

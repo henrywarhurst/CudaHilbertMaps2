@@ -24,6 +24,8 @@
 
 #include <curand.h>
 #include <curand_kernel.h>
+#include <thrust/inner_product.h>
+#include <thrust/device_ptr.h>
 
 #include "logisticregression.cuh"
 
@@ -259,7 +261,7 @@ Eigen::MatrixXf convertFloatArrayToEigen(float *h_array, size_t nElements)
 }
 
 
-std::vector<Eigen::Vector3f> getCloud(Eigen::MatrixXf weights, Eigen::MatrixXf points, std::vector<Ray> rays, float lengthScale)
+std::vector<Eigen::Vector3f> getCloud(Eigen::MatrixXf weights, Eigen::MatrixXf points, std::vector<std::vector<Eigen::Vector3f> > rays, float lengthScale)
 {
 	size_t rayLength = rays[0].size();
 	size_t nRays = rays.size();
@@ -274,7 +276,7 @@ std::vector<Eigen::Vector3f> getCloud(Eigen::MatrixXf weights, Eigen::MatrixXf p
 
 	// Copy rays into raw C arrays
 	for (size_t i=0; i<nRays; ++i) {
-		std::vector<Eigen::Vector3f> curRay = rays[i].getPoints();
+		std::vector<Eigen::Vector3f> curRay = rays[i];
 		for (size_t j=0; j<rayLength; ++j) {
 			size_t curIdx = i*rayLength + j;
 			queryX[curIdx] = curRay[j](0);
@@ -361,8 +363,8 @@ std::vector<Eigen::Vector3f> getCloud(Eigen::MatrixXf weights, Eigen::MatrixXf p
 
 		// Dot product features with weights
 		thrust::device_ptr<float> d_ptr_features = thrust::device_pointer_cast(d_features);
-		float dotResult = thrust::inner_product(d_ptr_weights, d_ptr_weights + inducingPointsSize, d_features, 0.0);
-		float logitResult = 1/(1 + exp(-dotResult));
+		float dotResult = thrust::inner_product(d_ptr_weights, d_ptr_weights + inducingPointsSize, d_ptr_features, 0.0);
+		float logitResult = 0.4; //1/(1 + exp(-dotResult));
 		if (logitResult > 0.5) {
 			Eigen::Vector3f newCloudPoint;
 			newCloudPoint << queryX[i], queryY[i], queryZ[i];
@@ -392,6 +394,8 @@ std::vector<Eigen::Vector3f> getCloud(Eigen::MatrixXf weights, Eigen::MatrixXf p
 	cudaFree(d_weights);
 	cudaFree(d_features);
 	cudaFree(d_lengthScale);
+
+	return cloud;
 }
 
 
