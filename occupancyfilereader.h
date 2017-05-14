@@ -20,9 +20,9 @@ class OccupancyFileReader
 	private:
 		std::string configFileName_;
 
-		std::vector<int> xPoints_;
-		std::vector<int> yPoints_;
-		std::vector<int> zPoints_;
+		std::vector<float> xPoints_;
+		std::vector<float> yPoints_;
+		std::vector<float> zPoints_;
 		std::vector<int> oPoints_;
 
 		Eigen::MatrixXf points_;

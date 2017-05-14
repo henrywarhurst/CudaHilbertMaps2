@@ -35,6 +35,7 @@ void HilbertMap::trainHost( float learningRate,
 	for (size_t i=0; i<nPoints; ++i) {
 		Eigen::Vector3f curPoint;
 		curPoint << points_(i,0), points_(i,1), points_(i,2);
+		std::cout << points_.row(i) << std::endl;;
 		Eigen::MatrixXf features = getFeaturesHost(curPoint);
 		std::cout << "\r" << i << "/" << nPoints << " trained" << std::flush;
 		
@@ -87,6 +88,42 @@ Eigen::MatrixXf HilbertMap::getFeaturesHost(Eigen::Vector3f point)
 		features(0,i) = exp(-lengthScale_*diff);
 	}
 	return features;
+}
+
+void HilbertMap::savePoseViewToPcdCuda()
+{
+    size_t width    = 640;
+    size_t height   = 480;
+
+    std::vector<Eigen::Vector3f> cloudPoints;
+
+	std::vector<std::vector<Eigen::Vector3f> > rawRays;
+    for (size_t v=0; v<height; ++v) {
+        for (size_t u=0; u<width; ++u) {
+            size_t depthIdx = v*width + u;
+            if (depthIdx % 50) continue;
+            Ray curRay(u, v);
+            std::vector<Eigen::Vector3f> curPoints = curRay.getPoints();
+			rawRays.push_back(curPoints);
+        }
+    }
+
+	cloudPoints = getCloud(weights_, points_, rawRays, lengthScale_);
+
+    pcl::PointCloud<pcl::PointXYZ> cloud;
+
+    cloud.width = cloudPoints.size();
+    cloud.height = 1;
+    cloud.is_dense = false;
+    cloud.points.resize(cloud.width * cloud.height);
+
+    for (size_t i=0; i<cloudPoints.size(); ++i) {
+        Eigen::Vector3f curCloudPoint = cloudPoints[i];
+        cloud.points[i].x = curCloudPoint(0);
+        cloud.points[i].y = curCloudPoint(1);
+        cloud.points[i].z = curCloudPoint(2);
+    }
+    pcl::io::savePCDFileASCII("hilbertview.pcd", cloud);
 }
 
 void HilbertMap::savePoseViewToPcd(Eigen::Matrix4f pose)

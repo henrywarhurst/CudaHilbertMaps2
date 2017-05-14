@@ -162,7 +162,7 @@ void testHilbertMapSaveView1()
 	Eigen::MatrixXi occupancy = fileReader.getOccupancy();
 	
 	HilbertMap hm(lengthScale, points, occupancy);
-	hm.trainHost(learningRate, regularisationLambda);
+	hm.train(learningRate, regularisationLambda);
 	
 //	std::cout << hm.getWeights() << std::endl;
 
@@ -173,6 +173,7 @@ void testHilbertMapSaveView1()
 				 0.0000,  0.0000,  0.0000,  1.0000;
 
 	hm.savePoseViewToPcd(testPose);
+	//hm.savePoseViewToPcdCuda();
 }
 
 int main()

@@ -293,6 +293,8 @@ std::vector<Eigen::Vector3f> getCloud(Eigen::MatrixXf weights, Eigen::MatrixXf p
 	pointsY = (float *) malloc(inducingPointsSize);
 	pointsZ = (float *) malloc(inducingPointsSize);
 
+	std::cout << points.row(1000) << std::endl;
+
     // Copy inducing points data to raw c arrays
     float *fullPointsOutput = (float *) malloc(sizeof(float) * points.size());
 
@@ -351,6 +353,7 @@ std::vector<Eigen::Vector3f> getCloud(Eigen::MatrixXf weights, Eigen::MatrixXf p
 	std::vector<Eigen::Vector3f> cloud;
 
 	for (size_t i=0; i<nPoints; ++i) {
+		std::cout << "\r" << i << "/" << nPoints << " points processed" << std::flush;
 		// Invoke CUDA kernel
 	    cudaRbf<<<nBlocks, maxThreads>>>(   d_pointsX,
 	                                        d_pointsY,
@@ -364,7 +367,10 @@ std::vector<Eigen::Vector3f> getCloud(Eigen::MatrixXf weights, Eigen::MatrixXf p
 		// Dot product features with weights
 		thrust::device_ptr<float> d_ptr_features = thrust::device_pointer_cast(d_features);
 		float dotResult = thrust::inner_product(d_ptr_weights, d_ptr_weights + inducingPointsSize, d_ptr_features, 0.0);
-		float logitResult = 0.4; //1/(1 + exp(-dotResult));
+		float logitResult = 1/(1 + exp(-dotResult));
+
+		thrust::device_ptr<float> d_pointsX_ptr = thrust::device_pointer_cast(d_pointsX);
+		//std::cout << points.row(100000) << std::endl;
 		if (logitResult > 0.5) {
 			Eigen::Vector3f newCloudPoint;
 			newCloudPoint << queryX[i], queryY[i], queryZ[i];

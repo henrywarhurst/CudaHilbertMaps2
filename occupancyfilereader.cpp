@@ -32,11 +32,11 @@ void OccupancyFileReader::parse()
 			size_t columnIdx = 0;
 			while (std::getline(lineStream, cell, ',')) {
 				if (columnIdx == 0) {
-					xPoints_.push_back(std::stoi(cell));					
+					xPoints_.push_back(std::stof(cell));					
 				} else if (columnIdx == 1) {
-					yPoints_.push_back(std::stoi(cell));	
+					yPoints_.push_back(std::stof(cell));	
 				} else if (columnIdx == 2) {
-					zPoints_.push_back(std::stoi(cell));
+					zPoints_.push_back(std::stof(cell));
 				} else if (columnIdx == 3) {
 					oPoints_.push_back(std::stoi(cell));
 				}

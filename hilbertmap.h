@@ -21,6 +21,7 @@ class HilbertMap
 
 		Eigen::MatrixXf getWeights() const;
 
+		void savePoseViewToPcdCuda();
 		void savePoseViewToPcd(Eigen::Matrix4f pose);
 
     private:
