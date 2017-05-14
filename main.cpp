@@ -151,7 +151,7 @@ void testHilbertMap4()
 
 void testHilbertMapSaveView1()
 {
-	float lengthScale = 50000.0f;
+	float lengthScale = 100000.0f;
 	float learningRate = 0.00001f;
 	float regularisationLambda = 0.0001f;
 
@@ -172,8 +172,8 @@ void testHilbertMapSaveView1()
 				-0.0105, -0.0037,  0.9999, -0.0094,
 				 0.0000,  0.0000,  0.0000,  1.0000;
 
-	hm.savePoseViewToPcd(testPose);
-	//hm.savePoseViewToPcdCuda();
+	//	hm.savePoseViewToPcd(testPose);
+	hm.savePoseViewToPcdCuda();
 }
 
 int main()

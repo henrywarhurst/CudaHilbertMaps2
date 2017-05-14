@@ -63,6 +63,16 @@ __global__ void cudaRbf(float *d_pointsX,
 						float *d_queryZ,
                         float *d_lengthScale);
 
+__global__ void cudaRbf(float *d_x,
+                        float *d_y,
+                        float *d_z,
+                        float *d_outputFeatures,
+                        float queryX,
+                        float queryY,
+                        float queryZ,
+                        float lengthScale);
+
+
 __global__ void cudaSgd(int *d_occupancy,
                         float *d_weights,
                         float *d_features,

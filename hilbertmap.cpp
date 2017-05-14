@@ -136,7 +136,7 @@ void HilbertMap::savePoseViewToPcd(Eigen::Matrix4f pose)
 	for (size_t v=0; v<height; ++v) {
 		for (size_t u=0; u<width; ++u) {
 			size_t depthIdx = v*height + u;
-			if (depthIdx % 50) continue;
+			if (depthIdx % 10) continue;
 			Eigen::Vector3f cloudPoint;
 			cloudPoint << 0, 0, 0;
 			Ray curRay(u, v);

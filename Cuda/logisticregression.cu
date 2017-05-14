@@ -261,10 +261,15 @@ Eigen::MatrixXf convertFloatArrayToEigen(float *h_array, size_t nElements)
 }
 
 
-std::vector<Eigen::Vector3f> getCloud(Eigen::MatrixXf weights, Eigen::MatrixXf points, std::vector<std::vector<Eigen::Vector3f> > rays, float lengthScale)
+std::vector<Eigen::Vector3f> getCloud(	Eigen::MatrixXf weights, 
+										Eigen::MatrixXf points, 
+										std::vector<std::vector<Eigen::Vector3f> > rays, 
+										float lengthScale)
 {
 	size_t rayLength = rays[0].size();
+	std::cout << "Raylength = " << rayLength << std::endl;
 	size_t nRays = rays.size();
+	std::cout << "Number of rays = " << nRays << std::endl;
 	size_t nPoints = rayLength * nRays;
 	size_t querySize = sizeof(float) * nPoints;
 
@@ -293,7 +298,6 @@ std::vector<Eigen::Vector3f> getCloud(Eigen::MatrixXf weights, Eigen::MatrixXf p
 	pointsY = (float *) malloc(inducingPointsSize);
 	pointsZ = (float *) malloc(inducingPointsSize);
 
-	std::cout << points.row(1000) << std::endl;
 
     // Copy inducing points data to raw c arrays
     float *fullPointsOutput = (float *) malloc(sizeof(float) * points.size());
@@ -349,29 +353,38 @@ std::vector<Eigen::Vector3f> getCloud(Eigen::MatrixXf weights, Eigen::MatrixXf p
     int nBlocks = getNumBlocks(nPoints, maxThreads);
 
 	thrust::device_ptr<float> d_ptr_weights = thrust::device_pointer_cast(d_weights);
+	std::cout << weights(0,0) << "\t" << weights(0, 100) << std::endl;
+	std::cout << d_ptr_weights[0] << "\t" << d_ptr_weights[100] << std::endl;
 
 	std::vector<Eigen::Vector3f> cloud;
 
 	for (size_t i=0; i<nPoints; ++i) {
 		std::cout << "\r" << i << "/" << nPoints << " points processed" << std::flush;
+
 		// Invoke CUDA kernel
 	    cudaRbf<<<nBlocks, maxThreads>>>(   d_pointsX,
 	                                        d_pointsY,
 	                                        d_pointsZ,
 	                                        d_features,
-	                                        &d_queryX[i],
-	                                        &d_queryY[i],
-	                                        &d_queryZ[i],
-	                                        d_lengthScale);
+	                                        queryX[i],
+	                                        queryY[i],
+	                                        queryZ[i],
+	                                        lengthScale);
 
 		// Dot product features with weights
 		thrust::device_ptr<float> d_ptr_features = thrust::device_pointer_cast(d_features);
-		float dotResult = thrust::inner_product(d_ptr_weights, d_ptr_weights + inducingPointsSize, d_ptr_features, 0.0);
+		float dotResult = thrust::inner_product(d_ptr_weights, d_ptr_weights + nInducingPoints, d_ptr_features, 0.0);
 		float logitResult = 1/(1 + exp(-dotResult));
 
 		thrust::device_ptr<float> d_pointsX_ptr = thrust::device_pointer_cast(d_pointsX);
-		//std::cout << points.row(100000) << std::endl;
+		thrust::device_ptr<float> d_queryX_ptr = thrust::device_pointer_cast(d_queryX);
+
+		//std::cout << "D_pointsX[0] = " << d_pointsX_ptr[0] << std::endl;
+		//std::cout << "D_queryX[0] = " << d_queryX_ptr[0] << std::endl;
+		//std::cout << dotResult << std::endl;
+		if (d_ptr_features[75000] > 0) std::cout << "YOOOOOO" << std::endl;
 		if (logitResult > 0.5) {
+			std::cout << "Greater than 0.5" << std::endl;
 			Eigen::Vector3f newCloudPoint;
 			newCloudPoint << queryX[i], queryY[i], queryZ[i];
 			cloud.push_back(newCloudPoint);
@@ -532,6 +545,35 @@ __global__ void cudaRbf(float *d_x,
 
 	d_outputFeatures[cudaIdx] = (float) exp(-*d_lengthScale * diff);
 }
+
+/**
+ * \brief Computes RBF kernel using CUDA
+ * 
+ * \param d_x device memory storing x coordinates
+ * \param d_y device memory storing y coordinates
+ * \param d_z device memory storing z coordinates
+ * \param outputFeatures device memory to store computed feature vector
+ * \param d_pointIdx the index of the point in the dataset that we are looking at
+ * \param d_lengthScale the length scale to use when computing the RBF function
+ */
+__global__ void cudaRbf(float *d_x,
+                        float *d_y,
+                        float *d_z,
+                        float *d_outputFeatures,
+                        float queryX,
+                        float queryY,
+                        float queryZ,
+                        float lengthScale)
+{
+    int cudaIdx = threadIdx.x + blockIdx.x * blockDim.x;
+
+    float diff = (d_x[cudaIdx] - queryX) * (d_x[cudaIdx] - queryX) +
+                 (d_y[cudaIdx] - queryY) * (d_y[cudaIdx] - queryY) +
+                 (d_z[cudaIdx] - queryZ) * (d_z[cudaIdx] - queryZ);
+
+    d_outputFeatures[cudaIdx] = (float) exp(-lengthScale * diff);
+}
+
 
 /**
  * \brief Perform weight update SGD step
