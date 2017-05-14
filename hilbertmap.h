@@ -10,6 +10,9 @@ class HilbertMap
 
 		void train(	float learningRate,
 					float regularisationLambda);
+
+		void trainHost( float learningRate,
+						float regularisationLambda);
 		
 		double query(Eigen::Vector3f point);
 		double queryHost(Eigen::Vector3f point);

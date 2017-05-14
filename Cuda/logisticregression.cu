@@ -407,24 +407,21 @@ __global__ void cudaSgd(int *d_occupancy,
 						float lambda)
 {
     int cudaIdx = threadIdx.x + blockIdx.x * blockDim.x;
+	if (d_pointIdx == 0) {
+		d_weights[cudaIdx] = 0;
+	}
 
     // If this is is the first example, just initialise the weights
-	if (d_pointIdx == 0) {
-	      // Random value between 0 and 1
-	      d_weights[cudaIdx] = (float) (curand(&states[blockIdx.x]) % 1000) / 1000.0; 
-	} else {
-		float numerator 	= -d_occupancy[d_pointIdx] * d_features[cudaIdx];
-    	float denominator 	= 1 + exp(-numerator*d_weights[cudaIdx]);         
-
-        // Just using L2 regularisation here, may use elastic net later
-        float regulariser = lambda*d_weights[cudaIdx];
-
-        // Combine all the parts
-        float lossGradient = (numerator/denominator) + regulariser*d_weights[cudaIdx]*d_weights[cudaIdx];
+//	if (d_pointIdx == 0) {
+//	      // Random value between 0 and 1
+//	      d_weights[cudaIdx] = (float) (curand(&states[blockIdx.x]) % 1000) / 1000.0; 
+//	} else {
+		float precomp 	= d_occupancy[d_pointIdx] * d_features[cudaIdx];
+		float lossGradient = (-precomp)/(1+exp(precomp*d_weights[cudaIdx])) + lambda*d_weights[cudaIdx]*d_weights[cudaIdx];
 
         // Update weight
         d_weights[cudaIdx] = d_weights[cudaIdx] - learningRate*lossGradient;
-	}
+//	}
 }
 
 /**

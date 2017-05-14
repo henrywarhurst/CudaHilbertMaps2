@@ -151,9 +151,9 @@ void testHilbertMap4()
 
 void testHilbertMapSaveView1()
 {
-	float lengthScale = 10000.0f;
+	float lengthScale = 50000.0f;
 	float learningRate = 0.00001f;
-	float regularisationLambda = 1.0f;
+	float regularisationLambda = 0.0001f;
 
 	OccupancyFileReader fileReader("/home/henry/ICPCUDA_results/run2/config.ini");
 	
@@ -162,7 +162,9 @@ void testHilbertMapSaveView1()
 	Eigen::MatrixXi occupancy = fileReader.getOccupancy();
 	
 	HilbertMap hm(lengthScale, points, occupancy);
-	hm.train(learningRate, regularisationLambda);
+	hm.trainHost(learningRate, regularisationLambda);
+	
+//	std::cout << hm.getWeights() << std::endl;
 
 	Eigen::Matrix4f testPose;
 	testPose <<	 0.9998, -0.0184,  0.0104,  0.0068,

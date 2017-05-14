@@ -26,6 +26,27 @@ void HilbertMap::train(	float learningRate,
 						              regularisationLambda);
 }
 
+void HilbertMap::trainHost( float learningRate,
+							float regularisationLambda)
+{
+	size_t nPoints = points_.rows();
+	weights_ = Eigen::MatrixXf::Random(1, nPoints);
+
+	for (size_t i=0; i<nPoints; ++i) {
+		Eigen::Vector3f curPoint;
+		curPoint << points_(i,0), points_(i,1), points_(i,2);
+		Eigen::MatrixXf features = getFeaturesHost(curPoint);
+		std::cout << "\r" << i << "/" << nPoints << " trained" << std::flush;
+		
+		for (size_t j=0; j<nPoints; ++j) {
+			float precomp = occupancy_(i,0) * features(0,j);
+			float lossGradient = (-precomp)/(1 + exp(precomp*weights_(0,j))) + regularisationLambda*weights_(0,j)*weights_(0,j);
+			weights_(0,j) = weights_(0,j) - learningRate*lossGradient;
+		}
+	}
+	std::cout << "finished training" << std::endl;
+}
+
 Eigen::MatrixXf HilbertMap::getWeights() const
 {
 	return weights_;
