@@ -420,7 +420,7 @@ __global__ void cudaSgd(int *d_occupancy,
         float regulariser = lambda*d_weights[cudaIdx];
 
         // Combine all the parts
-        float lossGradient = (numerator/denominator) + regulariser;
+        float lossGradient = (numerator/denominator) + regulariser*d_weights[cudaIdx]*d_weights[cudaIdx];
 
         // Update weight
         d_weights[cudaIdx] = d_weights[cudaIdx] - learningRate*lossGradient;
