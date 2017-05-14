@@ -151,8 +151,8 @@ void testHilbertMap4()
 
 void testHilbertMapSaveView1()
 {
-	float lengthScale = 100000.0f;
-	float learningRate = 0.00001f;
+	float lengthScale = 200000.0f;
+	float learningRate = 0.0000001f;
 	float regularisationLambda = 0.0001f;
 
 	OccupancyFileReader fileReader("/home/henry/ICPCUDA_results/run2/config.ini");

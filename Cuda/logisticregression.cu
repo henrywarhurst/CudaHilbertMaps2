@@ -353,8 +353,6 @@ std::vector<Eigen::Vector3f> getCloud(	Eigen::MatrixXf weights,
     int nBlocks = getNumBlocks(nPoints, maxThreads);
 
 	thrust::device_ptr<float> d_ptr_weights = thrust::device_pointer_cast(d_weights);
-	std::cout << weights(0,0) << "\t" << weights(0, 100) << std::endl;
-	std::cout << d_ptr_weights[0] << "\t" << d_ptr_weights[100] << std::endl;
 
 	std::vector<Eigen::Vector3f> cloud;
 
@@ -376,13 +374,6 @@ std::vector<Eigen::Vector3f> getCloud(	Eigen::MatrixXf weights,
 		float dotResult = thrust::inner_product(d_ptr_weights, d_ptr_weights + nInducingPoints, d_ptr_features, 0.0);
 		float logitResult = 1/(1 + exp(-dotResult));
 
-		thrust::device_ptr<float> d_pointsX_ptr = thrust::device_pointer_cast(d_pointsX);
-		thrust::device_ptr<float> d_queryX_ptr = thrust::device_pointer_cast(d_queryX);
-
-		//std::cout << "D_pointsX[0] = " << d_pointsX_ptr[0] << std::endl;
-		//std::cout << "D_queryX[0] = " << d_queryX_ptr[0] << std::endl;
-		//std::cout << dotResult << std::endl;
-		if (d_ptr_features[75000] > 0) std::cout << "YOOOOOO" << std::endl;
 		if (logitResult > 0.5) {
 			std::cout << "Greater than 0.5" << std::endl;
 			Eigen::Vector3f newCloudPoint;
@@ -599,7 +590,7 @@ __global__ void cudaSgd(int *d_occupancy,
 		d_weights[cudaIdx] = 0;
 	}
 
-    // If this is is the first example, just initialise the weights
+  	// If this is is the first example, just initialise the weights
 //	if (d_pointIdx == 0) {
 //	      // Random value between 0 and 1
 //	      d_weights[cudaIdx] = (float) (curand(&states[blockIdx.x]) % 1000) / 1000.0; 
