@@ -32,7 +32,7 @@ class Ray
 
         static constexpr const size_t kMaxZ             = 1700      ;
         static constexpr const size_t kStepZ            = 10      	;
-        static constexpr const size_t kStartZ           = 300      	;
+        static constexpr const size_t kStartZ           = 400      	;
 };
 
 #endif /* RAY_H_ */

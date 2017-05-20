@@ -110,6 +110,10 @@ void HilbertMap::savePoseViewToPcdCuda()
 
 	cloudPoints = getCloud(weights_, points_, rawRays, lengthScale_);
 
+	Eigen::Vector3f origin;
+	origin << 0,0,0;
+	cloudPoints.push_back(origin);
+
     pcl::PointCloud<pcl::PointXYZ> cloud;
 
     cloud.width = cloudPoints.size();

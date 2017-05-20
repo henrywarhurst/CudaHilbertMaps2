@@ -151,9 +151,9 @@ void testHilbertMap4()
 
 void testHilbertMapSaveView1()
 {
-	float lengthScale = 200000.0f;
-	float learningRate = 0.0000001f;
-	float regularisationLambda = 0.0001f;
+	float lengthScale = 1000.0f;
+	float learningRate = 0.000001f;
+	float regularisationLambda = 0.01f;
 
 	OccupancyFileReader fileReader("/home/henry/ICPCUDA_results/run2/config.ini");
 	
@@ -172,7 +172,7 @@ void testHilbertMapSaveView1()
 				-0.0105, -0.0037,  0.9999, -0.0094,
 				 0.0000,  0.0000,  0.0000,  1.0000;
 
-	//	hm.savePoseViewToPcd(testPose);
+	//hm.savePoseViewToPcd(testPose);
 	hm.savePoseViewToPcdCuda();
 }
 
