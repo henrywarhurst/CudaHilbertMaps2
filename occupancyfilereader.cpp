@@ -39,7 +39,15 @@ void OccupancyFileReader::parse()
 					zPoints_.push_back(std::stof(cell));
 				} else if (columnIdx == 3) {
 					oPoints_.push_back(std::stoi(cell));
-				}
+
+				// Add colour information and store surface points
+				} else if (columnIdx == 4) {
+					
+				} else if (columnIdx == 5) {
+					
+				} else if (columnIdx == 6) {
+
+				} 
 				columnIdx++;
 			}			
 		}
