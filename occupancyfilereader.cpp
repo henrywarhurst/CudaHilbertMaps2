@@ -70,7 +70,7 @@ void OccupancyFileReader::parse()
 		yPoints_.size() != zPoints_.size() ||
 		zPoints_.size() != oPoints_.size()) {
 
-		std::cout << "Inconsitent point data! Cannot build Eigen matrices!" << std::endl;
+		std::cout << "Inconsistent point data! Cannot build Eigen matrices!" << std::endl;
 		return;
 	}
 	

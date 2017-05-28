@@ -176,6 +176,47 @@ Eigen::MatrixXf runLogisticRegression(const Eigen::MatrixXf &points,
 	return outputWeights;	
 }
 
+void runLinearRegression(std::vector<float> x,
+						 std::vector<float> y,
+						 std::vector<float> z,
+						 std::vector<int> r,
+						 std::vector<int> g,
+						 std::vector<int> b,
+						 float lengthScale,
+						 float learningRate,
+						 float regularisationLambda)
+{
+	// Convert vectors to raw arrays and copy to device
+	size_t numPoints = x.size();	
+	size_t pointStorage = numPoints * sizeof(float);
+	size_t colourStorage = numPoints * sizeof(int);
+
+	float* d_x;
+	float* d_y;
+	float* d_z;
+
+	int* d_r;
+	int* d_g;
+	int* d_b;
+
+	cudaMalloc((void **) &d_x, pointStorage);
+	cudaMalloc((void **) &d_y, pointStorage);
+	cudaMalloc((void **) &d_z, pointStorage);
+
+	cudaMalloc((void **) &d_r, colourStorage);
+	cudaMalloc((void **) &d_g, colourStorage);
+	cudaMalloc((void **) &d_b, colourStorage);
+
+	cudaMemcpy(d_x, &x.data(), pointStorage, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_y, &y.data(), pointStorage, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_z, &z.data(), pointStorage, cudaMemcpyHostToDevice);
+
+	cudaMemcpy(d_r, &r.data(), colourStorage, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_g, &g.data(), colourStorage, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_b, &b.data(), colourStorage, cudaMemcpyHostToDevice);	
+	
+}
+
 /**
  * \brief Print out information about GPU memory
  *

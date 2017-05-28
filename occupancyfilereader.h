@@ -35,7 +35,6 @@ class OccupancyFileReader
 
 		Eigen::MatrixXf points_;
 		Eigen::MatrixXi occupancy_;
-
 };
 
 
