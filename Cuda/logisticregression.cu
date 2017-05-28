@@ -185,9 +185,9 @@ void runLinearRegression(std::vector<float> x,
 						 float lengthScale,
 						 float learningRate,
 						 float regularisationLambda,
-						 float *weights_r,
-						 float *weights_g,
-						 float *weights_b)
+						 float *weightsR,
+						 float *weightsG,
+						 float *weightsB)
 {
 	// Convert vectors to raw arrays and copy to device
 	size_t nPoints = x.size();	
@@ -203,7 +203,9 @@ void runLinearRegression(std::vector<float> x,
 	int *d_b;
 
 	float *d_features;
-	float *d_weights;
+	float *d_weightsR;
+	float *d_weightsG;
+	float *d_weightsB;
 
 	cudaMalloc((void **) &d_x, pointStorage);
 	cudaMalloc((void **) &d_y, pointStorage);
@@ -214,7 +216,10 @@ void runLinearRegression(std::vector<float> x,
 	cudaMalloc((void **) &d_b, colourStorage);
 
 	cudaMalloc((void **) &d_features, pointStorage);
-	cudaMalloc((void **) &d_weights, pointStorage);
+
+	cudaMalloc((void **) &d_weightsR, pointStorage);
+	cudaMalloc((void **) &d_weightsG, pointStorage);
+	cudaMalloc((void **) &d_weightsB, pointStorage);
 
 	cudaMemcpy(d_x, x.data(), pointStorage, cudaMemcpyHostToDevice);
 	cudaMemcpy(d_y, y.data(), pointStorage, cudaMemcpyHostToDevice);
@@ -242,10 +247,35 @@ void runLinearRegression(std::vector<float> x,
 										 lengthScale);  
 
 		// Update weights
-		cudaLinearRegressionSgd<<<nBlocks, maxThreads>>>();
+		cudaLinearRegressionSgd<<<nBlocks, maxThreads>>>(d_r,
+														 d_weightsR,
+														 d_features,
+														 i,
+														 learningRate,
+														 regularisationLambda);
 
+		cudaLinearRegressionSgd<<<nBlocks, maxThreads>>>(d_g,
+														 d_weightsG,
+														 d_features,
+														 i,
+														 learningRate,
+														 regularisationLambda);
+
+		cudaLinearRegressionSgd<<<nBlocks, maxThreads>>>(d_b,
+														 d_weightsB,
+														 d_features,
+														 i,
+														 learningRate,
+														 regularistionLambda);
 	}
+
+	// Copy result weight vectors to host
+	cudaMemcpy(weightsR, d_weightsR, colourStorage, cudaMemcpyDeviceToHost);
+	cudaMemcpy(weightsG, d_weightsG, colourStorage, cudaMemcpyDeviceToHost);
+	cudaMemcpy(weightsB, d_weightsB, colourStorage, cudaMemcpyDeviceToHost);
 	
+	
+	// Clean up the mess
 	cudaFree(d_x);
 	cudaFree(d_y);
 	cudaFree(d_z);
@@ -253,6 +283,12 @@ void runLinearRegression(std::vector<float> x,
 	cudaFree(d_r);
 	cudaFree(d_g);
 	cudaFree(d_b);
+
+	cudaFree(d_features);
+
+	cudaFree(d_weightsR);
+	cudaFree(d_weightsG);
+	cudaFree(d_weightsB);
 }
 
 /**
@@ -676,6 +712,7 @@ __global__ void cudaSgd(int *d_occupancy,
 	d_weights[cudaIdx] = d_weights[cudaIdx] - learningRate*lossGradient;
 }
 
+// TODO: Doxygen this function. It runs an SGD step for linear regression over colours
 __global__ void cudaLinearRegressionSgd(int *d_colourChannel,
 										float *d_weights,
 										float *d_features,
