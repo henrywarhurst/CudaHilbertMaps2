@@ -46,18 +46,18 @@ void HilbertMap::train(	float learningRate,
 	weightsG_ = (float *) malloc(rgbMemory);
 	weightsB_ = (float *) malloc(rgbMemory);
 
-	void runLinearRegression(surfX,
-	                         surfY,
-	                         surfZ,
-	                         r_,
-	                         g_,
-	                         b_,
-	                         lengthScale,
-	                         learningRate,
-	                         regularisationLambda,
-	                         weightsR_,
-	                         weightsG_,
-	                         weightsB_);
+	runLinearRegression(surfX_,
+	                    surfY_,
+	                    surfZ_,
+	                    r_,
+	                    g_,
+	                    b_,
+	                    lengthScale_,
+	                    learningRate,
+	                    regularisationLambda,
+	                    weightsR_,
+	                    weightsG_,
+	                    weightsB_);
 }
 
 void HilbertMap::trainHost( float learningRate,

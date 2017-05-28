@@ -266,7 +266,11 @@ void runLinearRegression(std::vector<float> x,
 														 d_features,
 														 i,
 														 learningRate,
-														 regularistionLambda);
+														 regularisationLambda);
+
+		std::cout << "\r" << i << "/" << nPoints << " colour points processed";
+		std::cout << std::flush;
+
 	}
 
 	// Copy result weight vectors to host

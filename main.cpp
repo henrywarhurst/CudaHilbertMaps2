@@ -202,13 +202,15 @@ void testHilbertMapColours()
 
 	hm.savePoseViewToPcdCuda();
 }
+
 int main()
 {
 	//testHilbertMap1();
 	//testHilbertMap2();
 	//testHilbertMap3();
 	//testHilbertMap4();
-	testHilbertMapSaveView1();
+	//testHilbertMapSaveView1();
+	testHilbertMapColours();
 	
 	return 0;
 }
