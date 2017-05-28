@@ -207,14 +207,23 @@ void runLinearRegression(std::vector<float> x,
 	cudaMalloc((void **) &d_g, colourStorage);
 	cudaMalloc((void **) &d_b, colourStorage);
 
-	cudaMemcpy(d_x, &x.data(), pointStorage, cudaMemcpyHostToDevice);
-	cudaMemcpy(d_y, &y.data(), pointStorage, cudaMemcpyHostToDevice);
-	cudaMemcpy(d_z, &z.data(), pointStorage, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_x, x.data(), pointStorage, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_y, y.data(), pointStorage, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_z, z.data(), pointStorage, cudaMemcpyHostToDevice);
 
-	cudaMemcpy(d_r, &r.data(), colourStorage, cudaMemcpyHostToDevice);
-	cudaMemcpy(d_g, &g.data(), colourStorage, cudaMemcpyHostToDevice);
-	cudaMemcpy(d_b, &b.data(), colourStorage, cudaMemcpyHostToDevice);	
+	cudaMemcpy(d_r, r.data(), colourStorage, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_g, g.data(), colourStorage, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_b, b.data(), colourStorage, cudaMemcpyHostToDevice);	
+
+
 	
+	cudaFree(d_x);
+	cudaFree(d_y);
+	cudaFree(d_z);
+
+	cudaFree(d_r);
+	cudaFree(d_g);
+	cudaFree(d_b);
 }
 
 /**
@@ -631,17 +640,31 @@ __global__ void cudaSgd(int *d_occupancy,
 		d_weights[cudaIdx] = 0;
 	}
 
-  	// If this is is the first example, just initialise the weights
-//	if (d_pointIdx == 0) {
-//	      // Random value between 0 and 1
-//	      d_weights[cudaIdx] = (float) (curand(&states[blockIdx.x]) % 1000) / 1000.0; 
-//	} else {
-		float precomp 	= d_occupancy[d_pointIdx] * d_features[cudaIdx];
-		float lossGradient = (-precomp)/(1+exp(precomp*d_weights[cudaIdx])) + lambda*d_weights[cudaIdx]*d_weights[cudaIdx];
+	float precomp 	= d_occupancy[d_pointIdx] * d_features[cudaIdx];
+	float lossGradient = (-precomp)/(1+exp(precomp*d_weights[cudaIdx])) + lambda*d_weights[cudaIdx]*d_weights[cudaIdx];
 
-        // Update weight
-        d_weights[cudaIdx] = d_weights[cudaIdx] - learningRate*lossGradient;
-//	}
+	// Update weight
+	d_weights[cudaIdx] = d_weights[cudaIdx] - learningRate*lossGradient;
+}
+
+__global__ void cudaLinearRegressionSgd(int *d_colourChannel,
+										float *d_weights,
+										float *d_features,
+										int d_pointIdx,
+										float learningRate,
+										float lambda)
+{
+	int cudaIdx = threadIdx.x + blockIdx.x * blockDim.x;
+	if (d_pointIdx == 0) {
+		d_weights[cudaIdx] = 0;
+	}
+
+	// Compute the gradient
+	float diff = d_colourChannel[d_pointIdx] - d_features[cudaIdx]*d_weights[cudaIdx];
+	float lossGradient = diff * d_features[cudaIdx];
+
+	// Update the weight
+	d_weights[cudaIdx] = d_weights[cudaIdx] - learningRate*lossGradient;
 }
 
 /**

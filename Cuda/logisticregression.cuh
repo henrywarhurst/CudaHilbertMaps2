@@ -34,6 +34,16 @@ Eigen::MatrixXf runLogisticRegression(const Eigen::MatrixXf &points,
 									  float learningRate,
 									  float regularisationLambda);
 
+void runLinearRegression(std::vector<float> x,
+                         std::vector<float> y,
+                         std::vector<float> z,
+                         std::vector<int> r,
+                         std::vector<int> g,
+                         std::vector<int> b,
+                         float lengthScale,
+                         float learningRate,
+                         float regularisationLambda);
+
 void printStats(size_t nPoints, size_t dataSize, size_t nCudaBlocks);
 
 int getNumBlocks(int numDataPoints, int maxThreads);
@@ -80,6 +90,13 @@ __global__ void cudaSgd(int *d_occupancy,
                         curandState_t *states,
 						float learningRate,
 						float lambda);
+
+__global__ void cudaLinearRegressionSgd(int *d_colourChannel,
+                                        float *d_weights,
+                                        float *d_features,
+                                        int d_pointIdx,
+                                        float learningRate,
+                                        float lambda);
 
 __global__ void initCurand(unsigned int seed, curandState_t* states);
 
