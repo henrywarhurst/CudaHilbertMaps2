@@ -30,23 +30,33 @@ void OccupancyFileReader::parse()
 			std::string cell;
 			std::stringstream lineStream(occLine);
 			size_t columnIdx = 0;
+			float curX = 0;
+			float curY = 0;
+			float curZ = 0;
 			while (std::getline(lineStream, cell, ',')) {
 				if (columnIdx == 0) {
-					xPoints_.push_back(std::stof(cell));					
+					curX = std::stof(cell);
+					xPoints_.push_back(curX);					
 				} else if (columnIdx == 1) {
-					yPoints_.push_back(std::stof(cell));	
+					curY = std::stof(cell);
+					yPoints_.push_back(curY);	
 				} else if (columnIdx == 2) {
-					zPoints_.push_back(std::stof(cell));
+					curZ = std::stof(cell);
+					zPoints_.push_back(curZ);
 				} else if (columnIdx == 3) {
 					oPoints_.push_back(std::stoi(cell));
 
 				// Add colour information and store surface points
 				} else if (columnIdx == 4) {
-					
+					r_.push_back(std::stoi(cell));					
 				} else if (columnIdx == 5) {
-					
+					g_.push_back(std::stoi(cell));	
 				} else if (columnIdx == 6) {
-
+					b_.push_back(std::stoi(cell));
+					// Associate the surface points with the colours
+					xSurf_.push_back(curX);
+					ySurf_.push_back(curY);
+					zSurf_.push_back(curZ);
 				} 
 				columnIdx++;
 			}			

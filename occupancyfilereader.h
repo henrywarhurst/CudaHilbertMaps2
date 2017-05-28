@@ -24,6 +24,14 @@ class OccupancyFileReader
 		std::vector<float> yPoints_;
 		std::vector<float> zPoints_;
 		std::vector<int> oPoints_;
+	
+		std::vector<float> xSurf_;
+		std::vector<float> ySurf_;
+		std::vector<float> zSurf_;
+	
+		std::vector<int> r_;
+		std::vector<int> g_;
+		std::vector<int> b_;
 
 		Eigen::MatrixXf points_;
 		Eigen::MatrixXi occupancy_;
