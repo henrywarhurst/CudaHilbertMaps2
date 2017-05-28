@@ -33,6 +33,8 @@ HilbertMap::HilbertMap(float lengthScale,
 void HilbertMap::train(	float learningRate,
 						float regularisationLambda)
 {
+	std::cout << "size of surfX = " << surfX_.size() << std::endl;
+
 	// Cuda call to train the classifier
     weights_ = runLogisticRegression( points_,
 						              occupancy_,
@@ -146,11 +148,11 @@ void HilbertMap::savePoseViewToPcdCuda()
 						   points_, 
 						   rawRays, 
 						   lengthScale_,
-						   weightsR,
-						   weightsG,
-						   weightsB);
+						   weightsR_,
+						   weightsG_,
+						   weightsB_);
 
-	Eigen::Vector3f origin;
+	Eigen::Matrix<float, 6, 1> origin;
 	origin << 0,0,0,0,0,0;
 	cloudPoints.push_back(origin);
 
@@ -162,7 +164,7 @@ void HilbertMap::savePoseViewToPcdCuda()
     cloud.points.resize(cloud.width * cloud.height);
 
     for (size_t i=0; i<cloudPoints.size(); ++i) {
-        Eigen::Vector3f curCloudPoint = cloudPoints[i];
+        Eigen::Matrix<float, 6, 1> curCloudPoint = cloudPoints[i];
         cloud.points[i].x = curCloudPoint(0);
         cloud.points[i].y = curCloudPoint(1);
         cloud.points[i].z = curCloudPoint(2);

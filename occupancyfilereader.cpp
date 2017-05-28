@@ -48,15 +48,25 @@ void OccupancyFileReader::parse()
 
 				// Add colour information and store surface points
 				} else if (columnIdx == 4) {
-					r_.push_back(std::stoi(cell));					
+					int val = std::stoi(cell);
+					if (val != -1) {
+						r_.push_back(val);					
+					}
 				} else if (columnIdx == 5) {
-					g_.push_back(std::stoi(cell));	
+					int val = std::stoi(cell);
+					if (val != -1) {
+						g_.push_back(val);	
+					}
 				} else if (columnIdx == 6) {
-					b_.push_back(std::stoi(cell));
-					// Associate the surface points with the colours
-					xSurf_.push_back(curX);
-					ySurf_.push_back(curY);
-					zSurf_.push_back(curZ);
+					int val = std::stoi(cell);
+					if (val != -1) {
+						b_.push_back(val);
+
+						// Associate the surface points with the colours
+						xSurf_.push_back(curX);
+						ySurf_.push_back(curY);
+						zSurf_.push_back(curZ);
+					}
 				} 
 				columnIdx++;
 			}			

@@ -525,7 +525,7 @@ std::vector<Eigen::Matrix<float, 6, 1> > getCloud(	Eigen::MatrixXf weights,
 		float redResult = thrust::inner_product(d_ptr_weightsR, 
 												d_ptr_weightsR + nInducingPoints, 
 												d_ptr_features, 
-												0.0)
+												0.0);
 
 		float greenResult = thrust::inner_product(d_ptr_weightsG,
 												  d_ptr_weightsG + nInducingPoints,
