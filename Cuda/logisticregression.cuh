@@ -60,10 +60,13 @@ void convertEigenInputToPointers(const Eigen::MatrixXf &points,
 
 Eigen::MatrixXf convertFloatArrayToEigen(float *h_array, size_t nElements);
 
-std::vector<Eigen::Vector3f> getCloud(	Eigen::MatrixXf weights, 
+std::vector<Eigen::Matrix<float, 6, 1> > getCloud(	Eigen::MatrixXf weights, 
 										Eigen::MatrixXf points, 
 										std::vector<std::vector<Eigen::Vector3f> > rays, 
-										float lengthScale);
+										float lengthScale,
+										float *weightsR,
+										float *weightsG,
+										float *weightsB);
 
 Eigen::MatrixXf getFeatures(Eigen::Vector3f point, const Eigen::MatrixXf &featurePoints, float lengthScale);
 								 

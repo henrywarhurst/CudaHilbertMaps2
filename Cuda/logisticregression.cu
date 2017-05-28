@@ -380,10 +380,13 @@ Eigen::MatrixXf convertFloatArrayToEigen(float *h_array, size_t nElements)
 }
 
 
-std::vector<Eigen::Vector3f> getCloud(	Eigen::MatrixXf weights, 
-										Eigen::MatrixXf points, 
-										std::vector<std::vector<Eigen::Vector3f> > rays, 
-										float lengthScale)
+std::vector<Eigen::Matrix<float, 6, 1> > getCloud(	Eigen::MatrixXf weights, 
+													Eigen::MatrixXf points, 
+													std::vector<std::vector<Eigen::Vector3f> > rays, 
+													float lengthScale,
+													float *weightsR,
+													float *weightsG,
+													float *weightsB)
 {
 	size_t rayLength = rays[0].size();
 	std::cout << "Raylength = " << rayLength << std::endl;
@@ -445,24 +448,41 @@ std::vector<Eigen::Vector3f> getCloud(	Eigen::MatrixXf weights,
 	float *d_features;
 	float *d_lengthScale;
 	float *d_weights;
+
+	float *d_weightsR;
+	float *d_weightsG;
+	float *d_weightsB;
 	
 	cudaMalloc((void **) &d_queryX, querySize);
 	cudaMalloc((void **) &d_queryY, querySize);
 	cudaMalloc((void **) &d_queryZ, querySize);
+
 	cudaMalloc((void **) &d_pointsX, inducingPointsSize);
 	cudaMalloc((void **) &d_pointsY, inducingPointsSize);
 	cudaMalloc((void **) &d_pointsZ, inducingPointsSize); 
+
 	cudaMalloc((void **) &d_weights, inducingPointsSize);
+	cudaMalloc((void **) &d_weightsR, inducingPointsSize);
+	cudaMalloc((void **) &d_weightsG, inducingPointsSize);
+	cudaMalloc((void **) &d_weightsB, inducingPointsSize);
+
 	cudaMalloc((void **) &d_features, inducingPointsSize);
+
 	cudaMalloc((void **) &d_lengthScale, sizeof(float));
 
 	cudaMemcpy(d_queryX, queryX, 	querySize, cudaMemcpyHostToDevice);
 	cudaMemcpy(d_queryY, queryY, 	querySize, cudaMemcpyHostToDevice);
 	cudaMemcpy(d_queryZ, queryZ, 	querySize, cudaMemcpyHostToDevice);
+
 	cudaMemcpy(d_pointsX, pointsX, 	inducingPointsSize, cudaMemcpyHostToDevice);
 	cudaMemcpy(d_pointsY, pointsY, 	inducingPointsSize, cudaMemcpyHostToDevice);
 	cudaMemcpy(d_pointsZ, pointsZ, 	inducingPointsSize, cudaMemcpyHostToDevice);
+
 	cudaMemcpy(d_weights, h_weights, inducingPointsSize, cudaMemcpyHostToDevice);	
+	cudaMemcpy(d_weightsR, weightsR, inducingPointsSize, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_weightsG, weightsG, inducingPointsSize, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_weightsB, weightsB, inducingPointsSize, cudaMemcpyHostToDevice);
+
 	cudaMemcpy(d_lengthScale, &lengthScale, querySize, cudaMemcpyHostToDevice);
 
     // Compute device parameters
@@ -473,7 +493,11 @@ std::vector<Eigen::Vector3f> getCloud(	Eigen::MatrixXf weights,
 
 	thrust::device_ptr<float> d_ptr_weights = thrust::device_pointer_cast(d_weights);
 
-	std::vector<Eigen::Vector3f> cloud;
+	thrust::device_ptr<float> d_ptr_weightsR = thrust::device_pointer_cast(d_weightsR);
+	thrust::device_ptr<float> d_ptr_weightsG = thrust::device_pointer_cast(d_weightsG);
+	thrust::device_ptr<float> d_ptr_weightsB = thrust::device_pointer_cast(d_weightsB);
+
+	std::vector<Eigen::Matrix<float, 6, 1> > cloud;
 
 	for (size_t i=0; i<nPoints; ++i) {
 		std::cout << "\r" << i << "/" << nPoints << " points processed" << std::flush;
@@ -490,13 +514,39 @@ std::vector<Eigen::Vector3f> getCloud(	Eigen::MatrixXf weights,
 
 		// Dot product features with weights
 		thrust::device_ptr<float> d_ptr_features = thrust::device_pointer_cast(d_features);
-		float dotResult = thrust::inner_product(d_ptr_weights, d_ptr_weights + nInducingPoints, d_ptr_features, 0.0);
+		float dotResult = thrust::inner_product(d_ptr_weights, 
+												d_ptr_weights + nInducingPoints, 
+												d_ptr_features, 
+												0.0);
+
 		float logitResult = 1/(1 + exp(-dotResult));
+
+		// Dot product features with colour weights
+		float redResult = thrust::inner_product(d_ptr_weightsR, 
+												d_ptr_weightsR + nInducingPoints, 
+												d_ptr_features, 
+												0.0)
+
+		float greenResult = thrust::inner_product(d_ptr_weightsG,
+												  d_ptr_weightsG + nInducingPoints,
+												  d_ptr_features, 
+												  0.0);
+
+		float blueResult = thrust::inner_product(d_ptr_weightsB,
+												 d_ptr_weightsB + nInducingPoints,
+												 d_ptr_features, 
+												 0.0);		
 
 		if (logitResult > 0.5) {
 			std::cout << "Greater than 0.5" << std::endl;
-			Eigen::Vector3f newCloudPoint;
-			newCloudPoint << queryX[i], queryY[i], queryZ[i];
+			Eigen::Matrix<float, 6, 1> newCloudPoint;
+			newCloudPoint << queryX[i], 
+							 queryY[i], 
+							 queryZ[i], 
+							 redResult, 
+							 greenResult, 
+							 blueResult;
+
 			cloud.push_back(newCloudPoint);
 			
 			size_t tmp = i / rayLength;

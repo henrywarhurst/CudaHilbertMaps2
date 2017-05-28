@@ -129,7 +129,7 @@ void HilbertMap::savePoseViewToPcdCuda()
     size_t width    = 640;
     size_t height   = 480;
 
-    std::vector<Eigen::Vector3f> cloudPoints;
+    std::vector<Eigen::Matrix<float, 6, 1> > cloudPoints;
 
 	std::vector<std::vector<Eigen::Vector3f> > rawRays;
     for (size_t v=0; v<height; ++v) {
@@ -142,13 +142,19 @@ void HilbertMap::savePoseViewToPcdCuda()
         }
     }
 
-	cloudPoints = getCloud(weights_, points_, rawRays, lengthScale_);
+	cloudPoints = getCloud(weights_, 
+						   points_, 
+						   rawRays, 
+						   lengthScale_,
+						   weightsR,
+						   weightsG,
+						   weightsB);
 
 	Eigen::Vector3f origin;
-	origin << 0,0,0;
+	origin << 0,0,0,0,0,0;
 	cloudPoints.push_back(origin);
 
-    pcl::PointCloud<pcl::PointXYZ> cloud;
+    pcl::PointCloud<pcl::PointXYZRGB> cloud;
 
     cloud.width = cloudPoints.size();
     cloud.height = 1;
@@ -160,6 +166,9 @@ void HilbertMap::savePoseViewToPcdCuda()
         cloud.points[i].x = curCloudPoint(0);
         cloud.points[i].y = curCloudPoint(1);
         cloud.points[i].z = curCloudPoint(2);
+		cloud.points[i].r = curCloudPoint(3);
+		cloud.points[i].g = curCloudPoint(4);
+		cloud.points[i].b = curCloudPoint(5);
     }
     pcl::io::savePCDFileASCII("hilbertview.pcd", cloud);
 }
