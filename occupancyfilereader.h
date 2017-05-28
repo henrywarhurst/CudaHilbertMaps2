@@ -17,6 +17,14 @@ class OccupancyFileReader
 		Eigen::MatrixXf getPoints() const;
 		Eigen::MatrixXi getOccupancy() const;
 
+		std::vector<float> getXSurf() const;
+		std::vector<float> getYSurf() const;
+		std::vector<float> getZSurf() const;
+
+		std::vector<int> getR() const;
+		std::vector<int> getG() const;
+		std::vector<int> getB() const;
+
 	private:
 		std::string configFileName_;
 

@@ -8,10 +8,25 @@
 #include "hilbertmap.h"
 #include "ray.h"
 
-HilbertMap::HilbertMap(float lengthScale, Eigen::MatrixXf points, Eigen::MatrixXi occupancy)
+HilbertMap::HilbertMap(float lengthScale, 
+					   Eigen::MatrixXf points, 
+					   Eigen::MatrixXi occupancy,
+					   std::vector<int> r,
+					   std::vector<int> g,
+					   std::vector<int> b,
+					   std::vector<float> surfX,
+					   std::vector<float> surfY,
+					   std::vector<float> surfZ)
+
 	: lengthScale_(lengthScale),
 	  points_(points),
-	  occupancy_(occupancy)
+	  occupancy_(occupancy),
+	  r_(r),
+	  g_(g),
+	  b_(b),
+	  surfX_(surfX),
+	  surfY_(surfY),
+	  surfZ_(surfZ)
 {}
 
 
@@ -24,6 +39,25 @@ void HilbertMap::train(	float learningRate,
 						              lengthScale_,
 						              learningRate,
 						              regularisationLambda);
+
+	// Allocate memory for RGB weights
+	size_t rgbMemory = r_.size() * sizeof(int);
+	weightsR_ = (float *) malloc(rgbMemory);
+	weightsG_ = (float *) malloc(rgbMemory);
+	weightsB_ = (float *) malloc(rgbMemory);
+
+	void runLinearRegression(surfX,
+	                         surfY,
+	                         surfZ,
+	                         r_,
+	                         g_,
+	                         b_,
+	                         lengthScale,
+	                         learningRate,
+	                         regularisationLambda,
+	                         weightsR_,
+	                         weightsG_,
+	                         weightsB_);
 }
 
 void HilbertMap::trainHost( float learningRate,

@@ -42,7 +42,10 @@ void runLinearRegression(std::vector<float> x,
                          std::vector<int> b,
                          float lengthScale,
                          float learningRate,
-                         float regularisationLambda);
+                         float regularisationLambda,
+						 float *weightsR,
+						 float *weightsG,
+						 float *weightsB);
 
 void printStats(size_t nPoints, size_t dataSize, size_t nCudaBlocks);
 

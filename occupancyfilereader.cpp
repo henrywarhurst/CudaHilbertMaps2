@@ -96,3 +96,34 @@ Eigen::MatrixXi OccupancyFileReader::getOccupancy() const
 {
 	return occupancy_;
 }
+
+std::vector<float> OccupancyFileReader::getXSurf() const
+{
+	return xSurf_;
+}
+
+std::vector<float> OccupancyFileReader::getYSurf() const
+{
+	return ySurf_;
+}
+
+std::vector<float> OccupancyFileReader::getZSurf() const
+{
+	return zSurf_;
+}
+
+std::vector<int> OccupancyFileReader::getR() const
+{
+	return r_;
+}
+
+std::vector<int> OccupancyFileReader::getG() const
+{
+	return g_;
+}
+
+std::vector<int> OccupancyFileReader::getB() const
+{
+	return b_;
+}
+

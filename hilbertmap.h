@@ -6,7 +6,15 @@
 class HilbertMap
 {
     public:
-		HilbertMap(float lengthScale, Eigen::MatrixXf points, Eigen::MatrixXi occupancy);
+		HilbertMap(float lengthScale, 
+				   Eigen::MatrixXf points,	
+				   Eigen::MatrixXi occupancy,
+				   std::vector<int> r,
+				   std::vector<int> g,
+				   std::vector<int> b,
+				   std::vector<float> surfX,
+				   std::vector<float> surfY,
+				   std::vector<float> surfZ);
 
 		void train(	float learningRate,
 					float regularisationLambda);
@@ -26,9 +34,22 @@ class HilbertMap
 
     private:
 		float lengthScale_;
+
 		Eigen::MatrixXf points_;
 		Eigen::MatrixXi occupancy_;
 		Eigen::MatrixXf weights_;
+		
+		std::vector<int> r_;
+		std::vector<int> g_;
+		std::vector<int> b_;
+
+		std::vector<float> surfX_;
+		std::vector<float> surfY_;
+		std::vector<float> surfZ_;
+
+		float *weightsR_;
+		float *weightsG_;
+		float *weightsB_;
 		
 };
 
