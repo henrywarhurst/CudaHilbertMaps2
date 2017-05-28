@@ -184,20 +184,26 @@ void runLinearRegression(std::vector<float> x,
 						 std::vector<int> b,
 						 float lengthScale,
 						 float learningRate,
-						 float regularisationLambda)
+						 float regularisationLambda,
+						 float *weights_r,
+						 float *weights_g,
+						 float *weights_b)
 {
 	// Convert vectors to raw arrays and copy to device
-	size_t numPoints = x.size();	
-	size_t pointStorage = numPoints * sizeof(float);
-	size_t colourStorage = numPoints * sizeof(int);
+	size_t nPoints = x.size();	
+	size_t pointStorage = nPoints * sizeof(float);
+	size_t colourStorage = nPoints * sizeof(int);
 
-	float* d_x;
-	float* d_y;
-	float* d_z;
+	float *d_x;
+	float *d_y;
+	float *d_z;
 
-	int* d_r;
-	int* d_g;
-	int* d_b;
+	int *d_r;
+	int *d_g;
+	int *d_b;
+
+	float *d_features;
+	float *d_weights;
 
 	cudaMalloc((void **) &d_x, pointStorage);
 	cudaMalloc((void **) &d_y, pointStorage);
@@ -207,6 +213,9 @@ void runLinearRegression(std::vector<float> x,
 	cudaMalloc((void **) &d_g, colourStorage);
 	cudaMalloc((void **) &d_b, colourStorage);
 
+	cudaMalloc((void **) &d_features, pointStorage);
+	cudaMalloc((void **) &d_weights, pointStorage);
+
 	cudaMemcpy(d_x, x.data(), pointStorage, cudaMemcpyHostToDevice);
 	cudaMemcpy(d_y, y.data(), pointStorage, cudaMemcpyHostToDevice);
 	cudaMemcpy(d_z, z.data(), pointStorage, cudaMemcpyHostToDevice);
@@ -215,7 +224,27 @@ void runLinearRegression(std::vector<float> x,
 	cudaMemcpy(d_g, g.data(), colourStorage, cudaMemcpyHostToDevice);
 	cudaMemcpy(d_b, b.data(), colourStorage, cudaMemcpyHostToDevice);	
 
+    // Compute device parameters
+    cudaDeviceProp props;
+    cudaGetDeviceProperties(&props, 0);
+    int maxThreads = props.maxThreadsPerBlock;
+    int nBlocks = getNumBlocks(nPoints, maxThreads);
 
+	for (size_t i=0; i<nPoints; ++i) {
+		// Get features
+		cudaRbf<<<nBlocks, maxThreads>>>(d_x,
+										 d_y,
+										 d_z,
+										 d_features,
+										 x[i],
+									     y[i],
+										 z[i],
+										 lengthScale);  
+
+		// Update weights
+		cudaLinearRegressionSgd<<<nBlocks, maxThreads>>>();
+
+	}
 	
 	cudaFree(d_x);
 	cudaFree(d_y);
