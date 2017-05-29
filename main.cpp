@@ -155,7 +155,7 @@ void testHilbertMapSaveView1()
 	float learningRate = 0.000001f;
 	float regularisationLambda = 0;
 
-	OccupancyFileReader fileReader("/home/henry/ICPCUDA_results/run3/config.ini");
+	OccupancyFileReader fileReader("/home/henry/ICPCUDA_results/run5/config.ini");
 	
 	fileReader.parse();
 	Eigen::MatrixXf points = fileReader.getPoints();
