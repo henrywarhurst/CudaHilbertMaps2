@@ -270,7 +270,6 @@ void runLinearRegression(std::vector<float> x,
 
 		std::cout << "\r" << i << "/" << nPoints << " colour points processed";
 		std::cout << std::flush;
-
 	}
 
 	// Copy result weight vectors to host
@@ -386,7 +385,10 @@ std::vector<Eigen::Matrix<float, 6, 1> > getCloud(	Eigen::MatrixXf weights,
 													float lengthScale,
 													float *weightsR,
 													float *weightsG,
-													float *weightsB)
+													float *weightsB,
+													std::vector<float> surfX,
+													std::vector<float> surfY,
+													std::vector<float> surfZ)
 {
 	size_t rayLength = rays[0].size();
 	std::cout << "Raylength = " << rayLength << std::endl;
@@ -394,6 +396,9 @@ std::vector<Eigen::Matrix<float, 6, 1> > getCloud(	Eigen::MatrixXf weights,
 	std::cout << "Number of rays = " << nRays << std::endl;
 	size_t nPoints = rayLength * nRays;
 	size_t querySize = sizeof(float) * nPoints;
+
+	size_t nSurfacePoints = surfX.size();
+	size_t surfacePointsSize = nSurfacePoints * sizeof(float);
 
 	float *queryX, *queryY, *queryZ;
 
@@ -419,7 +424,6 @@ std::vector<Eigen::Matrix<float, 6, 1> > getCloud(	Eigen::MatrixXf weights,
 	pointsX = (float *) malloc(inducingPointsSize);
 	pointsY = (float *) malloc(inducingPointsSize);
 	pointsZ = (float *) malloc(inducingPointsSize);
-
 
     // Copy inducing points data to raw c arrays
     float *fullPointsOutput = (float *) malloc(sizeof(float) * points.size());
@@ -452,6 +456,12 @@ std::vector<Eigen::Matrix<float, 6, 1> > getCloud(	Eigen::MatrixXf weights,
 	float *d_weightsR;
 	float *d_weightsG;
 	float *d_weightsB;
+
+	float *d_surfaceFeatures;
+
+	float *d_surfX;
+	float *d_surfY;
+	float *d_surfZ;
 	
 	cudaMalloc((void **) &d_queryX, querySize);
 	cudaMalloc((void **) &d_queryY, querySize);
@@ -462,9 +472,16 @@ std::vector<Eigen::Matrix<float, 6, 1> > getCloud(	Eigen::MatrixXf weights,
 	cudaMalloc((void **) &d_pointsZ, inducingPointsSize); 
 
 	cudaMalloc((void **) &d_weights, inducingPointsSize);
-	cudaMalloc((void **) &d_weightsR, inducingPointsSize);
-	cudaMalloc((void **) &d_weightsG, inducingPointsSize);
-	cudaMalloc((void **) &d_weightsB, inducingPointsSize);
+
+	cudaMalloc((void **) &d_weightsR, surfacePointsSize);
+	cudaMalloc((void **) &d_weightsG, surfacePointsSize);
+	cudaMalloc((void **) &d_weightsB, surfacePointsSize);
+
+	cudaMalloc((void **) &d_surfX, surfacePointsSize);
+	cudaMalloc((void **) &d_surfY, surfacePointsSize);
+	cudaMalloc((void **) &d_surfZ, surfacePointsSize);
+
+	cudaMalloc((void **) &d_surfaceFeatures, surfacePointsSize);
 
 	cudaMalloc((void **) &d_features, inducingPointsSize);
 
@@ -479,9 +496,14 @@ std::vector<Eigen::Matrix<float, 6, 1> > getCloud(	Eigen::MatrixXf weights,
 	cudaMemcpy(d_pointsZ, pointsZ, 	inducingPointsSize, cudaMemcpyHostToDevice);
 
 	cudaMemcpy(d_weights, h_weights, inducingPointsSize, cudaMemcpyHostToDevice);	
-	cudaMemcpy(d_weightsR, weightsR, inducingPointsSize, cudaMemcpyHostToDevice);
-	cudaMemcpy(d_weightsG, weightsG, inducingPointsSize, cudaMemcpyHostToDevice);
-	cudaMemcpy(d_weightsB, weightsB, inducingPointsSize, cudaMemcpyHostToDevice);
+
+	cudaMemcpy(d_weightsR, weightsR, surfacePointsSize, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_weightsG, weightsG, surfacePointsSize, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_weightsB, weightsB, surfacePointsSize, cudaMemcpyHostToDevice);
+
+	cudaMemcpy(d_surfX, surfX.data(), surfacePointsSize, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_surfY, surfY.data(), surfacePointsSize, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_surfZ, surfZ.data(), surfacePointsSize, cudaMemcpyHostToDevice);
 
 	cudaMemcpy(d_lengthScale, &lengthScale, querySize, cudaMemcpyHostToDevice);
 
@@ -490,6 +512,8 @@ std::vector<Eigen::Matrix<float, 6, 1> > getCloud(	Eigen::MatrixXf weights,
     cudaGetDeviceProperties(&props, 0);
     int maxThreads = props.maxThreadsPerBlock;
     int nBlocks = getNumBlocks(nPoints, maxThreads);
+
+	int nBlocksSurface = getNumBlocks(nSurfacePoints, maxThreads);
 
 	thrust::device_ptr<float> d_ptr_weights = thrust::device_pointer_cast(d_weights);
 
@@ -521,23 +545,37 @@ std::vector<Eigen::Matrix<float, 6, 1> > getCloud(	Eigen::MatrixXf weights,
 
 		float logitResult = 1/(1 + exp(-dotResult));
 
-		// Dot product features with colour weights
-		float redResult = thrust::inner_product(d_ptr_weightsR, 
-												d_ptr_weightsR + nInducingPoints, 
-												d_ptr_features, 
-												0.0);
-
-		float greenResult = thrust::inner_product(d_ptr_weightsG,
-												  d_ptr_weightsG + nInducingPoints,
-												  d_ptr_features, 
-												  0.0);
-
-		float blueResult = thrust::inner_product(d_ptr_weightsB,
-												 d_ptr_weightsB + nInducingPoints,
-												 d_ptr_features, 
-												 0.0);		
-
 		if (logitResult > 0.5) {
+
+			// Compute features for surface points
+			cudaRbf<<<nBlocksSurface, maxThreads>>>( d_surfX,
+													 d_surfY,
+													 d_surfZ, 
+													 d_surfaceFeatures,
+													 queryX[i],
+													 queryY[i],
+													 queryZ[i],
+													 lengthScale);
+
+			thrust::device_ptr<float> d_ptr_features_surface = 
+								thrust::device_pointer_cast(d_surfaceFeatures);
+
+			// Dot product features with colour weights
+			float redResult = thrust::inner_product(d_ptr_weightsR, 
+													d_ptr_weightsR + nSurfacePoints, 
+													d_ptr_features_surface, 
+													0.0);
+
+			float greenResult = thrust::inner_product(d_ptr_weightsG,
+													  d_ptr_weightsG + nSurfacePoints,
+													  d_ptr_features_surface, 
+													  0.0);
+
+			float blueResult = thrust::inner_product(d_ptr_weightsB,
+													 d_ptr_weightsB + nSurfacePoints,
+													 d_ptr_features_surface, 
+													 0.0);		
+
 			std::cout << "Greater than 0.5" << std::endl;
 			Eigen::Matrix<float, 6, 1> newCloudPoint;
 			newCloudPoint << queryX[i], 
@@ -578,7 +616,13 @@ std::vector<Eigen::Matrix<float, 6, 1> > getCloud(	Eigen::MatrixXf weights,
 }
 
 
-// TODO: COMMENT THIS FUNCTION
+/**
+ * \brief Compute Hilbert features using CUDA 
+ *
+ * \param point The point to compute features for
+ * \param featurePoints The other points to use to compute features.
+ * \param lenghtScale The lengthscale to use in the RBF kernel.
+*/
 Eigen::MatrixXf getFeatures(Eigen::Vector3f point, const Eigen::MatrixXf &featurePoints, float lengthScale)
 {		
 	// memory computation
@@ -673,7 +717,6 @@ Eigen::MatrixXf getFeatures(Eigen::Vector3f point, const Eigen::MatrixXf &featur
 	cudaFree(d_queryY);
 	cudaFree(d_queryZ);
 	cudaFree(d_lengthScale);
-
 
 	return vectorFeatures;
 }

@@ -66,7 +66,10 @@ std::vector<Eigen::Matrix<float, 6, 1> > getCloud(	Eigen::MatrixXf weights,
 										float lengthScale,
 										float *weightsR,
 										float *weightsG,
-										float *weightsB);
+										float *weightsB,
+										std::vector<float> surfX,
+										std::vector<float> surfY,
+										std::vector<float> surfZ);
 
 Eigen::MatrixXf getFeatures(Eigen::Vector3f point, const Eigen::MatrixXf &featurePoints, float lengthScale);
 								 

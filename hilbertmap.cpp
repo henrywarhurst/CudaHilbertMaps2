@@ -150,7 +150,10 @@ void HilbertMap::savePoseViewToPcdCuda()
 						   lengthScale_,
 						   weightsR_,
 						   weightsG_,
-						   weightsB_);
+						   weightsB_,
+						   surfX_,
+						   surfY_,
+						   surfZ_);
 
 	Eigen::Matrix<float, 6, 1> origin;
 	origin << 0,0,0,0,0,0;
