@@ -31,7 +31,7 @@ void Ray::transformToPose(Eigen::Matrix4f pose)
 	pointsTransformed_ = pointsOriginal_;
 	for (auto &point : pointsTransformed_) {
 		Eigen::Vector4f tmpPoint;
-		tmpPoint << tmpPoint(0), tmpPoint(1), tmpPoint(2), 1;
+		tmpPoint << point(0), point(1), point(2), 1;
 		Eigen::Vector4f transformedPoint = pose * tmpPoint;
 		point(0) = transformedPoint(0);
 		point(1) = transformedPoint(1);

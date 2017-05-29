@@ -90,7 +90,7 @@ Eigen::MatrixXf HilbertMap::getFeaturesHost(Eigen::Vector3f point)
 	return features;
 }
 
-void HilbertMap::savePoseViewToPcdCuda()
+void HilbertMap::savePoseViewToPcdCuda(Eigen::Matrix4f pose)
 {
     size_t width    = 640;
     size_t height   = 480;
@@ -103,6 +103,7 @@ void HilbertMap::savePoseViewToPcdCuda()
             size_t depthIdx = v*width + u;
             if (depthIdx % 50) continue;
             Ray curRay(u, v);
+			curRay.transformToPose(pose);
             std::vector<Eigen::Vector3f> curPoints = curRay.getPoints();
 			rawRays.push_back(curPoints);
         }

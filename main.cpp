@@ -173,7 +173,7 @@ void testHilbertMapSaveView1()
 				 0.0000,  0.0000,  0.0000,  1.0000;
 
 	//hm.savePoseViewToPcd(testPose);
-	hm.savePoseViewToPcdCuda();
+	hm.savePoseViewToPcdCuda(testPose);
 }
 
 int main()
