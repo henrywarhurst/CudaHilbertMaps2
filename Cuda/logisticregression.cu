@@ -622,6 +622,8 @@ std::vector<Eigen::Matrix<float, 6, 1> > getCloud(	Eigen::MatrixXf weights,
  * \param point The point to compute features for
  * \param featurePoints The other points to use to compute features.
  * \param lenghtScale The lengthscale to use in the RBF kernel.
+ *
+ * \return The features as a column vector
 */
 Eigen::MatrixXf getFeatures(Eigen::Vector3f point, const Eigen::MatrixXf &featurePoints, float lengthScale)
 {		
@@ -786,7 +788,7 @@ __global__ void cudaRbf(float *d_x,
  * \param d_features the features for the given point as computed by cudaRbf
  * \param d_pointIdx the index of the current point in the dataset
  * \param states initialiser for the random number generator
- * \param learningRate the alpa value to use with SGD
+ * \param learningRate the alpha value to use with SGD
  * \param lambda the regularisation constant for L2 regularisation
  */
 __global__ void cudaSgd(int *d_occupancy,
@@ -809,7 +811,16 @@ __global__ void cudaSgd(int *d_occupancy,
 	d_weights[cudaIdx] = d_weights[cudaIdx] - learningRate*lossGradient;
 }
 
-// TODO: Doxygen this function. It runs an SGD step for linear regression over colours
+/**
+ * \brief Linear regression using SGD
+ *
+ * \param d_colourChannel The colour inputs for R, G, or B
+ * \param d_weights The weights to learn. You must prealloc!
+ * \param d_features The features to use for this weight update.
+ * \param d_pointIdx The index of this point within the dataset.
+ * \param learningRate Learning rate to use in SGD weight updates.
+ * \param lambda Regularisation constant.
+ */
 __global__ void cudaLinearRegressionSgd(int *d_colourChannel,
 										float *d_weights,
 										float *d_features,
